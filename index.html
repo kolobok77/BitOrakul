@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIT-ORAKUL V7.9 // MULTI_ENGINE_CORE</title>
+    <title>BIT-ORAKUL V8.0 // OMNI_ENGINE</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -32,6 +32,7 @@
             text-transform: uppercase;
         }
 
+        /* CRT Effect */
         body::before {
             content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
@@ -60,32 +61,30 @@
         }
         
         .big-val { font-size: 1.8rem; font-weight: bold; transition: all 0.2s ease; }
-        
-        .status-fiat { color: var(--neon-yellow) !important; }
-        .status-long { color: var(--neon-green) !important; }
-        .status-short { color: var(--neon-red) !important; }
+        .status-fiat { color: var(--neon-yellow) !important; text-shadow: 0 0 10px var(--neon-yellow); }
+        .status-long { color: var(--neon-green) !important; text-shadow: 0 0 10px var(--neon-green); }
+        .status-short { color: var(--neon-red) !important; text-shadow: 0 0 10px var(--neon-red); }
 
         .indicator-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
         
         .chip { 
             font-size: 7px; border: 1px solid #333; padding: 2px 4px; 
-            color: #444; transition: 0.3s; 
+            color: #444; transition: 0.3s; background: rgba(0,0,0,0.3);
         }
-        .chip.active-buy { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
-        .chip.active-sell { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
-        .chip.neutral { border-color: #333; color: #444; }
+        .chip.buy { border-color: var(--neon-green); color: var(--neon-green); }
+        .chip.sell { border-color: var(--neon-red); color: var(--neon-red); }
+        .chip.active { border-color: var(--neon-yellow); color: var(--neon-yellow); }
 
-        /* DECISION POWER */
-        .decision-wrapper { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; margin-left: 5px; }
-        .decision-container { height: 10px; background: #000; border: 1px solid #222; position: relative; overflow: hidden; }
-        #decision-bar { height: 100%; width: 0%; background: var(--neon-magenta); transition: width 0.3s ease, background 0.3s; }
-        .dec-text { font-size: 6px; color: var(--neon-magenta); }
+        /* Decision Bar */
+        .decision-wrapper { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; margin-left: 10px; }
+        .decision-container { height: 10px; background: #000; border: 1px solid #333; position: relative; overflow: hidden; }
+        #decision-bar { height: 100%; width: 0%; background: var(--neon-magenta); transition: width 0.3s ease; }
+        .dec-text { font-size: 6px; color: var(--neon-magenta); display: flex; justify-content: space-between; }
 
         .history-line { display: flex; gap: 8px; font-size: 7px; overflow: hidden; flex-direction: row-reverse; }
         .hist-item { border-left: 1px solid #333; padding-left: 8px; white-space: nowrap; }
 
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-
         .btn {
             background: none; border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan); font-family: inherit;
@@ -93,8 +92,10 @@
         }
         #stop-btn.active { background: var(--neon-red); color: black; border-color: var(--neon-red); }
 
+        /* Sliders */
         .slider-group { display: flex; flex-direction: column; gap: 2px; }
-        .slider-header { display: flex; justify-content: space-between; font-size: 7px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 7px; align-items: center; }
+        .opt-tag { font-size: 6px; background: var(--neon-yellow); color: black; padding: 0 3px; border-radius: 2px; visibility: hidden; }
         input[type=range] { width: 100%; accent-color: var(--neon-magenta); margin: 5px 0; cursor: pointer; }
 
         #terminal {
@@ -107,11 +108,9 @@
 
         .log { margin-bottom: 3px; border-left: 2px solid var(--neon-cyan); padding-left: 6px; }
         .log-sub { margin-bottom: 5px; font-size: 8px; padding-left: 10px; color: #777; }
-        .buy-log { color: var(--neon-green); border-color: var(--neon-green); }
-        .sell-log { color: var(--neon-red); border-color: var(--neon-red); }
-        .sys-log { color: #555; border-color: #333; }
-
-        #active-logic-tag { color: var(--neon-yellow); font-weight: bold; }
+        .buy-log { color: var(--neon-green); }
+        .sell-log { color: var(--neon-red); }
+        .sys-log { color: #555; }
     </style>
 </head>
 <body>
@@ -124,23 +123,23 @@
 <div class="node-stack">
     <div class="node">
         <div class="node-label">
-            <span>MARKET_CORE // <span id="active-logic-tag">INIT...</span></span>
+            <span>CORE_FEED // <span id="engine-tag" style="color:var(--neon-yellow)">...</span></span>
             <span id="last-update">--:--:--</span>
         </div>
         <div id="price" class="big-val">00000.00</div>
         <div class="indicator-row">
-            <div id="ind-1" class="chip neutral">SIG_A</div>
-            <div id="ind-2" class="chip neutral">SIG_B</div>
-            <div id="ind-3" class="chip neutral">SIG_C</div>
+            <div id="ind-1" class="chip">SIG_A</div>
+            <div id="ind-2" class="chip">SIG_B</div>
+            <div id="ind-3" class="chip">SIG_C</div>
             <div class="decision-wrapper">
-                <div class="dec-text">DECISION_CONFIDENCE</div>
+                <div class="dec-text"><span>DECISION_POWER</span><span id="dec-val">0%</span></div>
                 <div class="decision-container"><div id="decision-bar"></div></div>
             </div>
         </div>
     </div>
 
     <div class="node">
-        <div class="node-label">LEDGER_STATE</div>
+        <div class="node-label">FINANCIAL_LEDGER</div>
         <div id="balance" class="big-val status-fiat">$10,000.00</div>
         <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:9px;">
             <span>POS: <span id="pos-type">FLAT</span></span>
@@ -150,19 +149,23 @@
     </div>
 
     <div class="node">
-        <div class="node-label">DYNAMICS_CONTROL</div>
+        <div class="node-label">OMNI_ENGINE_DYNAMICS</div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
             <div class="slider-group">
-                <div class="slider-header"><span>VELOCITY</span><span id="spd-lbl">SWING</span></div>
+                <div class="slider-header"><span>VELOCITY (MODE)</span><span id="spd-lbl">SWING</span></div>
                 <input type="range" id="spd-sld" min="1" max="5" value="3">
             </div>
             <div class="slider-group">
-                <div class="slider-header"><span>HYSTERESIS</span><span id="hst-lbl">0.02%</span></div>
-                <input type="range" id="hst-sld" min="1" max="100" value="20">
+                <div class="slider-header">
+                    <span>HYSTERESIS</span>
+                    <span id="opt-hint" class="opt-tag">OPTIMAL</span>
+                    <span id="hst-lbl">0.02%</span>
+                </div>
+                <input type="range" id="hst-sld" min="1" max="200" value="40">
             </div>
         </div>
         <div class="controls">
-            <div style="border: 1px dashed var(--neon-magenta); padding: 5px; font-size: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="border: 1px dashed var(--neon-magenta); padding: 5px; font-size: 8px; display: flex; justify-content: space-between; align-items: center; width:100%;">
                 <span>MASTER_BRAIN</span>
                 <input type="checkbox" id="master-toggle" checked>
             </div>
@@ -174,7 +177,7 @@
 <div id="terminal"></div>
 
 <script>
-    // --- 1. CONFIG ---
+    // --- 1. CONFIG & STATE ---
     const firebaseConfig = {
         apiKey: "AIzaSyDA5ol08AMQc3MmZMUYOLD9_P0RQLK9Fn4",
         authDomain: "bitorakul.firebaseapp.com",
@@ -193,34 +196,33 @@
         position: null,
         prices: [],
         speed: 3,
-        hysteresis: 0.0002,
+        hysteresis: 0.0004,
         running: true,
         isMaster: true,
-        lastTradeT: 0,
+        lastT: Date.now(),
         history: []
     };
 
     const Profiles = {
-        1: { n: "SCALP", i: 2000, logic: "REVERSION", len: 100 },
-        2: { n: "INTRADAY", i: 10000, logic: "MOMENTUM", len: 200 },
-        3: { n: "SWING", i: 60000, logic: "TRIPLE_CONF", len: 500 },
-        4: { n: "TREND", i: 300000, logic: "MACD_TREND", len: 600 },
-        5: { n: "HODL", i: 3600000, logic: "GOLDEN_CROSS", len: 1000 }
+        1: { n: "SCALP", i: 2000, ohst: 0.00015, logic: "REVERSION", buf: 100 },
+        2: { n: "INTRADAY", i: 10000, ohst: 0.00035, logic: "MOMENTUM", buf: 200 },
+        3: { n: "SWING", i: 60000, ohst: 0.00055, logic: "TREND_FOLLOW", buf: 500 },
+        4: { n: "TREND", i: 300000, ohst: 0.00080, logic: "MACD_SHIFT", buf: 600 },
+        5: { n: "HODL", i: 3600000, ohst: 0.00120, logic: "GOLDEN_CROSS", buf: 1000 }
     };
 
-    // --- 2. MATH ENGINE ---
+    // --- 2. MATH CORE ---
     const MathCore = {
         ema: (d, n) => { 
             if (d.length < n) return d[d.length-1];
-            let k = 2/(n+1), e = d[d.length - n]; 
-            for(let i = d.length - n + 1; i < d.length; i++) e = d[i] * k + e * (1 - k); 
+            let k = 2/(n+1), e = d[d.length-n]; 
+            for(let i=d.length-n+1; i<d.length; i++) e = d[i]*k+e*(1-k); 
             return e; 
         },
         rsi: (d, n) => {
             if(d.length <= n) return 50;
-            let g=0, l=0; 
-            for(let i=d.length-n; i<d.length; i++){ 
-                let diff=d[i]-d[i-1]; if(diff>=0) g+=diff; else l-=diff; 
+            let g=0, l=0; for(let i=d.length-n; i<d.length; i++) {
+                let diff = d[i]-d[i-1]; if(diff>=0) g+=diff; else l-=diff;
             }
             return 100-(100/(1+(g/n)/((l/n)||1)));
         },
@@ -232,34 +234,40 @@
         }
     };
 
-    // --- 3. UI HELPERS ---
+    // --- 3. UI ENGINE ---
     function log(msg, type='', sub=false) {
         const t = document.getElementById('terminal'), d = document.createElement('div');
         d.className = sub ? 'log-sub' : `log ${type}`;
         d.innerHTML = sub ? `>> ${msg}` : `[${new Date().toLocaleTimeString([],{hour12:false})}] ${msg}`;
-        t.prepend(d); if(t.children.length > 40) t.lastChild.remove();
+        t.prepend(d); if(t.children.length > 50) t.lastChild.remove();
     }
 
     function updateUI(p) {
         const balEl = document.getElementById('balance');
+        const pnlEl = document.getElementById('pnl-val');
         if (state.position) {
             const pos = state.position;
             const pnl = (pos.type === 'LONG') ? ((p/pos.price-1)*100) : ((1-p/pos.price)*100);
             const curB = (pos.type === 'LONG') ? pos.amount * p : (pos.amount * pos.price + (pos.price - p) * pos.amount);
             balEl.innerText = `$${curB.toFixed(2)}`;
             balEl.className = 'big-val ' + (pnl >= 0 ? 'status-long' : 'status-short');
-            document.getElementById('pnl-val').innerText = (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + "%";
-            document.getElementById('pnl-val').style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+            pnlEl.innerText = (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + "%";
+            pnlEl.style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
             document.getElementById('pos-type').innerText = pos.type;
         } else {
             balEl.innerText = `$${state.balance.toFixed(2)}`;
             balEl.className = 'big-val status-fiat';
-            document.getElementById('pnl-val').innerText = "0.00%";
+            pnlEl.innerText = "0.00%";
             document.getElementById('pos-type').innerText = "FLAT";
         }
+        
+        // Check Optimal Hysteresis UI
+        const currentOHst = Profiles[state.speed].ohst;
+        const diff = Math.abs(state.hysteresis - currentOHst);
+        document.getElementById('opt-hint').style.visibility = diff < 0.00005 ? 'visible' : 'hidden';
     }
 
-    // --- 4. TRADE EXECUTION ---
+    // --- 4. TRADING ENGINE ---
     function trade(side, price) {
         if (!state.isMaster) return;
         if (side === 'LONG' || side === 'SHORT') {
@@ -275,38 +283,40 @@
             if(state.history.length > 5) state.history.shift();
             state.position = null;
         }
-        state.lastTradeT = Date.now();
-        db.ref('orakel_v7_final').set({ bal: state.balance, pos: state.position, run: state.running, spd: state.speed, hst: state.hysteresis, lastP: price, hist: state.history });
+        db.ref('orakel_v7_final').set({ bal: state.balance, pos: state.position, run: state.running, spd: state.speed, hst: state.hysteresis, lastP: price, hist: state.history, time: Date.now() });
     }
 
-    // --- 5. MULTI-ENGINE BRAIN ---
+    // --- 5. OMNI_BRAIN LOGIC ---
     function brain() {
         const p = parseFloat(document.getElementById('price').innerText);
         if (!p || isNaN(p) || !state.isMaster) return;
 
-        const profile = Profiles[state.speed];
-        state.prices.push(p); if(state.prices.length > profile.len) state.prices.shift();
+        const conf = Profiles[state.speed];
+        state.prices.push(p); if(state.prices.length > conf.buf) state.prices.shift();
         if(state.prices.length < 50) return;
 
-        document.getElementById('active-logic-tag').innerText = profile.logic;
-        
-        let decision = 0; // -100 to 100
-        let sigA = 'neutral', sigB = 'neutral', sigC = 'neutral';
+        document.getElementById('engine-tag').innerText = conf.logic;
+        let dec = 0; // Decision Power 0-100
         const th = p * state.hysteresis;
 
-        // --- ЛОГИКА ПО РЕЖИМАМ ---
-        switch(profile.logic) {
+        // Reset chips
+        const chips = [document.getElementById('ind-1'), document.getElementById('ind-2'), document.getElementById('ind-3')];
+        chips.forEach(c => c.className = 'chip');
+
+        // MULTI-STRATEGY ROUTING
+        switch(conf.logic) {
             case "REVERSION": // SCALP
                 const bb = MathCore.bb(state.prices, 20);
                 const rsiS = MathCore.rsi(state.prices, 7);
-                sigA = p <= bb.l ? 'active-buy' : (p >= bb.u ? 'active-sell' : 'neutral');
-                sigB = rsiS < 30 ? 'active-buy' : (rsiS > 70 ? 'active-sell' : 'neutral');
-                decision = (rsiS < 35 ? (35 - rsiS) * 3 : (rsiS > 65 ? (65 - rsiS) * 3 : 0));
+                chips[0].innerText = "BB_TOUCH"; chips[0].className += (p >= bb.u || p <= bb.l) ? ' active' : '';
+                chips[1].innerText = "RSI_EXT"; chips[1].className += (rsiS > 70 || rsiS < 30) ? ' active' : '';
+                dec = Math.max(0, Math.min(100, (Math.abs(rsiS - 50) - 20) * 3.3));
                 if (!state.position) {
                     if (p <= bb.l && rsiS < 30) trade('LONG', p);
                     else if (p >= bb.u && rsiS > 70) trade('SHORT', p);
-                } else if (p >= bb.m && state.position.type === 'SHORT' || p <= bb.m && state.position.type === 'LONG') {
-                    trade('CLOSE', p);
+                } else {
+                    if (state.position.type === 'LONG' && p >= bb.m) trade('CLOSE', p);
+                    else if (state.position.type === 'SHORT' && p <= bb.m) trade('CLOSE', p);
                 }
                 break;
 
@@ -314,76 +324,71 @@
                 const e8 = MathCore.ema(state.prices, 8);
                 const e21 = MathCore.ema(state.prices, 21);
                 const rsiI = MathCore.rsi(state.prices, 14);
-                sigA = e8 > e21 + th ? 'active-buy' : (e8 < e21 - th ? 'active-sell' : 'neutral');
-                sigB = rsiI > 55 ? 'active-buy' : (rsiI < 45 ? 'active-sell' : 'neutral');
-                decision = Math.min(100, (Math.abs(e8 - e21) / (th || 1)) * 100);
+                chips[0].innerText = "EMA_CROSS"; chips[0].className += (Math.abs(e8-e21) > th) ? ' active' : '';
+                chips[1].innerText = "MOMENTUM"; chips[1].className += (rsiI > 55 || rsiI < 45) ? ' active' : '';
+                dec = Math.min(100, (Math.abs(e8 - e21) / (th || 1)) * 100);
                 if (!state.position) {
                     if (e8 > e21 + th && rsiI > 52) trade('LONG', p);
                     else if (e8 < e21 - th && rsiI < 48) trade('SHORT', p);
-                } else if ((state.position.type === 'LONG' && e8 < e21) || (state.position.type === 'SHORT' && e8 > e21)) {
-                    trade('CLOSE', p);
+                } else {
+                    if (state.position.type === 'LONG' && e8 < e21) trade('CLOSE', p);
+                    else if (state.position.type === 'SHORT' && e8 > e21) trade('CLOSE', p);
                 }
                 break;
 
-            case "TRIPLE_CONF": // SWING
+            case "TREND_FOLLOW": // SWING
                 const efS = MathCore.ema(state.prices, 12);
                 const esS = MathCore.ema(state.prices, 26);
-                const eTrend = MathCore.ema(state.prices, 200);
-                sigA = p > eTrend ? 'active-buy' : 'active-sell';
-                sigB = efS > esS + th ? 'active-buy' : (efS < esS - th ? 'active-sell' : 'neutral');
-                decision = Math.min(100, (Math.abs(efS - esS) / (th || 1)) * 50);
+                const e200 = MathCore.ema(state.prices, 200);
+                chips[0].innerText = "MAIN_TREND"; chips[0].className += (p > e200) ? ' buy' : ' sell';
+                chips[1].innerText = "WAVE_CROSS"; chips[1].className += (efS > esS) ? ' buy' : ' sell';
+                dec = Math.min(100, (Math.abs(efS - esS) / (th || 1)) * 80);
                 if (!state.position) {
-                    if (p > eTrend && efS > esS + th) trade('LONG', p);
-                    else if (p < eTrend && efS < esS - th) trade('SHORT', p);
-                } else if ((state.position.type === 'LONG' && efS < esS) || (state.position.type === 'SHORT' && efS > esS)) {
-                    trade('CLOSE', p);
+                    if (p > e200 && efS > esS + th) trade('LONG', p);
+                    else if (p < e200 && efS < esS - th) trade('SHORT', p);
+                } else {
+                    if (state.position.type === 'LONG' && efS < esS) trade('CLOSE', p);
+                    else if (state.position.type === 'SHORT' && efS > esS) trade('CLOSE', p);
                 }
                 break;
 
-            case "MACD_TREND": // TREND
-                const e12 = MathCore.ema(state.prices, 12);
-                const e26 = MathCore.ema(state.prices, 26);
-                const macd = e12 - e26;
-                const signalLine = MathCore.ema(state.prices.map((_,i)=> {
-                    const sub = state.prices.slice(0, i+1);
-                    return MathCore.ema(sub, 12) - MathCore.ema(sub, 26);
-                }), 9);
-                sigA = macd > signalLine ? 'active-buy' : 'active-sell';
-                decision = Math.min(100, (Math.abs(macd - signalLine) / (p*0.0001)) * 100);
+            case "MACD_SHIFT": // TREND
+                const ma12 = MathCore.ema(state.prices, 12);
+                const ma26 = MathCore.ema(state.prices, 26);
+                const macd = ma12 - ma26;
+                chips[0].innerText = "MACD_VAL"; chips[0].className += macd > 0 ? ' buy' : ' sell';
+                dec = Math.min(100, (Math.abs(macd) / (p*0.001)) * 1000);
                 if (!state.position) {
-                    if (macd > signalLine) trade('LONG', p);
-                    else if (macd < signalLine) trade('SHORT', p);
-                } else if ((state.position.type === 'LONG' && macd < signalLine) || (state.position.type === 'SHORT' && macd > signalLine)) {
-                    trade('CLOSE', p);
+                    if (macd > th/10) trade('LONG', p);
+                    else if (macd < -th/10) trade('SHORT', p);
+                } else {
+                    if (state.position.type === 'LONG' && macd < 0) trade('CLOSE', p);
+                    else if (state.position.type === 'SHORT' && macd > 0) trade('CLOSE', p);
                 }
                 break;
 
             case "GOLDEN_CROSS": // HODL
-                const e50 = MathCore.ema(state.prices, 50);
-                const e200 = MathCore.ema(state.prices, 200);
-                sigA = e50 > e200 ? 'active-buy' : 'active-sell';
-                decision = e50 > e200 ? 100 : 20;
-                if (!state.position && e50 > e200) trade('LONG', p);
-                else if (state.position && e50 < e200) trade('CLOSE', p);
+                const fastH = MathCore.ema(state.prices, 50);
+                const slowH = MathCore.ema(state.prices, 200);
+                chips[0].innerText = "GOLD_CROSS"; chips[0].className += fastH > slowH ? ' buy' : ' sell';
+                dec = fastH > slowH ? 100 : 10;
+                if (!state.position && fastH > slowH + th) trade('LONG', p);
+                else if (state.position && fastH < slowH) trade('CLOSE', p);
                 break;
         }
 
-        // Обновление чипов
-        document.getElementById('ind-1').className = 'chip ' + sigA;
-        document.getElementById('ind-2').className = 'chip ' + sigB;
-        document.getElementById('ind-3').className = 'chip ' + sigC;
-        
-        const dBar = document.getElementById('decision-bar');
-        dBar.style.width = Math.abs(decision) + "%";
-        dBar.style.background = decision > 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+        // Decision UI
+        document.getElementById('decision-bar').style.width = dec + "%";
+        document.getElementById('dec-val').innerText = Math.round(dec) + "%";
     }
 
-    // --- 6. NETWORK & INIT ---
+    // --- 6. SYNC & NET ---
     let ws;
     function initNet() {
         ws = new WebSocket('wss://stream.binance.com:443/ws/btcusdt@ticker');
         ws.onmessage = (e) => {
             const d = JSON.parse(e.data), p = parseFloat(d.c);
+            state.lastT = Date.now();
             document.getElementById('price').innerText = p.toFixed(2);
             document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
             updateUI(p);
@@ -397,14 +402,37 @@
         if (state.speed != d.spd) {
             state.speed = d.spd; document.getElementById('spd-sld').value = d.spd;
             document.getElementById('spd-lbl').innerText = Profiles[d.spd].n;
+            // Auto-snap Hysteresis on mode change
+            state.hysteresis = Profiles[d.spd].ohst;
             if (state.isMaster) { clearInterval(window.bT); window.bT = setInterval(brain, Profiles[d.spd].i); }
         }
-        if (d.hst) { state.hysteresis = d.hst; document.getElementById('hst-sld').value = d.hst*100000; document.getElementById('hst-lbl').innerText = (d.hst*100).toFixed(3)+"%"; }
+        if (d.hst) {
+            state.hysteresis = d.hst;
+            document.getElementById('hst-sld').value = d.hst * 100000;
+            document.getElementById('hst-lbl').innerText = (d.hst * 100).toFixed(3) + "%";
+        }
         document.getElementById('stop-btn').className = state.running ? 'btn' : 'btn active';
     });
 
-    document.getElementById('spd-sld').oninput = function() { db.ref('orakel_v7_final').update({ spd: parseInt(this.value) }); };
-    document.getElementById('hst-sld').oninput = function() { db.ref('orakel_v7_final').update({ hst: parseFloat(this.value)/100000 }); };
+    const pRef = db.ref('presence_v7').push(); pRef.onDisconnect().remove(); pRef.set(true);
+    db.ref('presence_v7').on('value', (s) => document.getElementById('online-count').innerText = s.numChildren());
+
+    // --- 7. INPUTS ---
+    document.getElementById('spd-sld').oninput = function() {
+        const newSpd = parseInt(this.value);
+        db.ref('orakel_v7_final').update({ spd: newSpd, hst: Profiles[newSpd].ohst });
+    };
+
+    document.getElementById('hst-sld').oninput = function() {
+        db.ref('orakel_v7_final').update({ hst: parseFloat(this.value)/100000 });
+    };
+
+    document.getElementById('stop-btn').onclick = () => {
+        const p = parseFloat(document.getElementById('price').innerText);
+        if (state.running && state.position) trade('CLOSE', p);
+        db.ref('orakel_v7_final').update({ run: !state.running });
+    };
+
     document.getElementById('master-toggle').onchange = function() {
         state.isMaster = this.checked;
         if (state.isMaster) window.bT = setInterval(brain, Profiles[state.speed].i);
@@ -414,9 +442,8 @@
     window.onload = () => {
         initNet();
         setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString(), 1000);
-        log("SYSTEM_V7.9_MULTI_ENGINE_READY", "sys-log");
+        log("OMNI_ENGINE_V8.0_ONLINE", "sys-log");
     };
 </script>
 </body>
 </html>
-
