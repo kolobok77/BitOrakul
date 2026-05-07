@@ -355,4 +355,84 @@
         };
         ws.onclose = () => { 
             st.innerText = "LOST"; st.style.color = "var(--neon-red)"; 
-            if (!state.isEco) setTimeout(initNet
+            if (!state.isEco) setTimeout(initNet, 3000); 
+        };
+    }
+
+    function checkEco() {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && (conn.type === 'cellular' || conn.saveData)) {
+            state.isEco = true;
+            document.getElementById('eco-badge').style.display = 'inline';
+            if (!state.isMaster && ws) { ws.close(); log("TRAFFIC_SAVER: BINANCE_OFF / CLOUD_ONLY", "sys-log"); }
+        }
+    }
+
+    // --- 6. SYNC ---
+    db.ref('orakel_v7_final').on('value', (s) => {
+        const d = s.val(); if (!d) return;
+        state.balance = d.bal; state.position = d.pos; state.running = d.run;
+        if(d.hist) { state.history = d.hist; updateHistoryUI(); }
+        
+        if (state.isEco && !state.isMaster && d.lastP) {
+            document.getElementById('price').innerText = d.lastP.toFixed(2);
+            updateBalanceUI(d.lastP);
+        }
+
+        if (state.speed != d.spd) {
+            state.speed = d.spd; document.getElementById('spd-sld').value = d.spd;
+            document.getElementById('spd-lbl').innerText = Profiles[d.spd].n;
+            if (state.isMaster) { clearInterval(window.bT); window.bT = setInterval(brain, Profiles[d.spd].i); }
+        }
+
+        const btn = document.getElementById('stop-btn');
+        btn.className = state.running ? 'btn' : 'btn active';
+        btn.innerText = state.running ? 'STOP_AI' : 'START_AI';
+    });
+
+    const pRef = db.ref('presence_v7').push(); pRef.onDisconnect().remove(); pRef.set(true);
+    let initialCheck = true;
+    db.ref('presence_v7').on('value', (s) => {
+        const count = s.numChildren();
+        document.getElementById('online-count').innerText = count;
+        if (initialCheck && count > 1) {
+            document.getElementById('master-toggle').checked = false;
+            state.isMaster = false; log("UNITY: OBSERVER_AUTO_MODE", "sys-log");
+        }
+        initialCheck = false;
+    });
+
+    // --- 7. UI EVENTS ---
+    document.getElementById('stop-btn').onclick = () => {
+        const p = parseFloat(document.getElementById('price').innerText);
+        if (state.running && state.position) trade('CLOSE', p);
+        db.ref('orakel_v7_final').update({ run: !state.running }); beep(660);
+    };
+
+    document.getElementById('master-toggle').onchange = function() {
+        state.isMaster = this.checked;
+        log(state.isMaster ? "CORE: MASTER_ACTIVE" : "CORE: OBSERVER_ONLY", "sys-log");
+        if (state.isMaster) { 
+            if (!ws || ws.readyState !== 1) initNet();
+            window.bT = setInterval(brain, Profiles[state.speed].i); 
+        } else { 
+            clearInterval(window.bT); 
+            if (state.isEco && ws) ws.close();
+        }
+    };
+
+    document.getElementById('spd-sld').oninput = function() {
+        db.ref('orakel_v7_final').update({ spd: parseInt(this.value) });
+    };
+
+    window.onload = () => {
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
+        checkEco();
+        initNet();
+        setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString([],{hour12:false}), 1000);
+        setInterval(() => { if(state.running && Date.now()-state.lastT > 15000) beep(220, 0.5); }, 15000);
+        log("SYSTEM_READY: ORAKUL_V7.4_LOGGER", "sys-log");
+    };
+</script>
+</body>
+</html>
