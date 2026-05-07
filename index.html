@@ -20,11 +20,7 @@
             --font-main: 'Courier New', monospace;
         }
 
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-            outline: none; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
             background-color: var(--bg-dark);
@@ -36,7 +32,6 @@
             text-transform: uppercase;
         }
 
-        /* CRT SCANLINES EFFECT */
         body::before {
             content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%);
@@ -81,45 +76,31 @@
         .chip.active-buy { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
         .chip.active-sell { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
 
-        /* DECISION ENGINE UI */
-        .decision-wrapper {
-            flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-left: 10px;
-        }
+        .decision-wrapper { flex-grow: 1; display: flex; flex-direction: column; gap: 4px; margin-left: 10px; }
         .decision-container {
             height: 14px; background: rgba(0,0,0,0.5); 
             border: 1px solid #333; position: relative; overflow: hidden;
         }
         #decision-bar {
             height: 100%; width: 0%; background: var(--neon-magenta);
-            box-shadow: 0 0 15px var(--neon-magenta); transition: width 0.1s linear;
+            box-shadow: 0 0 15px var(--neon-magenta); transition: width 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
         .dec-text { font-size: 7px; color: var(--neon-magenta); letter-spacing: 1px; }
 
-        /* LEDGER HISTORY */
         .history-line {
             display: flex; gap: 10px; font-size: 8px; overflow: hidden;
             flex-direction: row-reverse; justify-content: flex-start;
             flex-grow: 1; margin: 0 20px;
         }
-        .hist-item { 
-            white-space: nowrap; border-left: 1px solid #333; padding-left: 10px; 
-            display: flex; flex-direction: column;
-        }
+        .hist-item { white-space: nowrap; border-left: 1px solid #333; padding-left: 10px; display: flex; flex-direction: column; }
 
-        /* CONTROLS & SLIDERS */
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-
         .slider-group { display: flex; flex-direction: column; gap: 6px; }
         .slider-header { display: flex; justify-content: space-between; font-size: 9px; }
         
         input[type=range] { 
             width: 100%; accent-color: var(--neon-magenta); margin: 8px 0; cursor: pointer;
             background: #222; height: 4px; border-radius: 2px;
-        }
-
-        .opt-tag { 
-            color: var(--neon-yellow); font-weight: bold; font-size: 8px; 
-            background: rgba(255, 242, 0, 0.1); padding: 0 5px; border: 1px solid rgba(255, 242, 0, 0.3);
         }
 
         .btn {
@@ -131,7 +112,6 @@
         .btn:active { background: var(--neon-cyan); color: black; }
         #stop-btn.active { background: var(--neon-red); color: black; border-color: var(--neon-red); box-shadow: 0 0 20px var(--neon-red); }
 
-        /* TERMINAL LOGS */
         #terminal {
             flex-grow: 1; margin-top: 15px;
             background: rgba(0,0,0,0.95);
@@ -150,23 +130,23 @@
 <body>
 
 <header>
-    <div>NET: <span id="online-count">1</span> NODES // <span id="net-status">SYNCING</span></div>
+    <div>NET: <span id="online-count">1</span> NODES // <span id="net-status">WDE_ACTIVE</span></div>
     <div id="sys-clock">00:00:00</div>
 </header>
 
 <div class="node-stack">
     <div class="node">
         <div class="node-label">
-            <span>CORE_FEED // <span id="active-logic-tag" style="color:var(--neon-yellow)">INITIALIZING...</span></span>
+            <span>CORE_FEED // <span id="active-logic-tag" style="color:var(--neon-yellow)">CALIBRATING...</span></span>
             <span id="last-update">--:--:--</span>
         </div>
         <div id="price" class="big-val">00000.00</div>
         <div class="indicator-row">
-            <div id="ind-1" class="chip">SIG_A</div>
-            <div id="ind-2" class="chip">SIG_B</div>
-            <div id="ind-3" class="chip">SIG_C</div>
+            <div id="ind-ema" class="chip">EMA_SCORE</div>
+            <div id="ind-rsi" class="chip">RSI_SCORE</div>
+            <div id="ind-vol" class="chip">BB_GAP</div>
             <div class="decision-wrapper">
-                <span class="dec-text">DECISION_CONFIDENCE</span>
+                <span class="dec-text">DECISION_POWER (DP): <span id="dp-val">0%</span></span>
                 <div class="decision-container"><div id="decision-bar"></div></div>
             </div>
         </div>
@@ -183,18 +163,18 @@
     </div>
 
     <div class="node">
-        <div class="node-label">ADAPTIVE_ENGINE // SENSITIVITY_TUNING</div>
+        <div class="node-label">ADAPTIVE_ENGINE // SENSITIVITY</div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
             <div class="slider-group">
                 <div class="slider-header">
-                    <span>VELOCITY (MODE)</span>
+                    <span>MODE (WEIGHTS)</span>
                     <span id="spd-lbl" style="color:var(--neon-magenta)">SWING</span>
                 </div>
                 <input type="range" id="spd-sld" min="1" max="5" value="3">
             </div>
             <div class="slider-group">
                 <div class="slider-header">
-                    <span>HYSTERESIS <span class="opt-tag">OPT: <span id="opt-val">0.065</span>%</span></span>
+                    <span>HYSTERESIS GAP</span>
                     <span id="hst-lbl" style="color:var(--neon-yellow)">0.065%</span>
                 </div>
                 <input type="range" id="hst-sld" min="1" max="300" value="65">
@@ -202,10 +182,10 @@
         </div>
         <div class="controls">
             <div style="border: 1px dashed var(--neon-magenta); padding: 5px 12px; font-size: 10px; display: flex; justify-content: space-between; align-items: center;">
-                <span>MASTER_BRAIN_MODE</span>
+                <span>MASTER_BRAIN</span>
                 <input type="checkbox" id="master-toggle" checked>
             </div>
-            <button id="stop-btn" class="btn">STOP_AI_PROCESS</button>
+            <button id="stop-btn" class="btn">KILL_PROCESS</button>
         </div>
     </div>
 </div>
@@ -213,7 +193,7 @@
 <div id="terminal"></div>
 
 <script>
-    // --- 1. FIREBASE CONFIG ---
+    // --- 1. CONFIG & STATE ---
     const firebaseConfig = {
         apiKey: "AIzaSyDA5ol08AMQc3MmZMUYOLD9_P0RQLK9Fn4",
         authDomain: "bitorakul.firebaseapp.com",
@@ -227,13 +207,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 2. MULTI-STRATEGY PROFILES ---
     const Profiles = {
-        1: { n: "SCALP", i: 2000, logic: "REVERSION", len: 100, optH: 0.00018 },
-        2: { n: "INTRADAY", i: 10000, logic: "MOMENTUM", len: 200, optH: 0.00035 },
-        3: { n: "SWING", i: 60000, logic: "TRIPLE_CONF", len: 500, optH: 0.00065 },
-        4: { n: "TREND", i: 300000, logic: "MACD_TREND", len: 600, optH: 0.00150 },
-        5: { n: "HODL", i: 3600000, logic: "GOLDEN_CROSS", len: 1000, optH: 0.00350 }
+        1: { n: "SCALP", i: 2000, weights: { rsi: 0.5, bb: 0.4, ema: 0.1 }, optH: 0.00018 },
+        2: { n: "INTRADAY", i: 5000, weights: { rsi: 0.3, bb: 0.2, ema: 0.5 }, optH: 0.00035 },
+        3: { n: "SWING", i: 10000, weights: { rsi: 0.2, bb: 0.2, ema: 0.6 }, optH: 0.00065 },
+        4: { n: "TREND", i: 60000, weights: { rsi: 0.1, bb: 0.1, ema: 0.8 }, optH: 0.00150 },
+        5: { n: "HODL", i: 300000, weights: { rsi: 0.05, bb: 0.05, ema: 0.9 }, optH: 0.00350 }
     };
 
     let state = {
@@ -245,10 +224,11 @@
         running: true,
         isMaster: true,
         lastTradeT: 0,
-        history: []
+        history: [],
+        currentDP: 0
     };
 
-    // --- 3. MATH CORE ---
+    // --- 2. MATH CORE & WDE ---
     const MathCore = {
         ema: (d, n) => { 
             if (d.length < n) return d[d.length-1];
@@ -272,60 +252,76 @@
         }
     };
 
-    // --- 4. REALTIME VISUAL ENGINE ---
+    const WDE = {
+        calculate(prices, speed, hst) {
+            if (prices.length < 50) return { dp: 0, scores: { rsi: 0, ema: 0, bb: 0 } };
+            const p = prices[prices.length - 1];
+            const profile = Profiles[speed];
+            const w = profile.weights;
+
+            // RSI Component (-100 to 100)
+            const rsiVal = MathCore.rsi(prices, 14);
+            let rsiS = 0;
+            if (rsiVal > 70) rsiS = -((rsiVal - 70) / 30) * 100;
+            else if (rsiVal < 30) rsiS = ((30 - rsiVal) / 30) * 100;
+
+            // EMA Component (-100 to 100)
+            const e8 = MathCore.ema(prices, 8);
+            const e21 = MathCore.ema(prices, 21);
+            const th = p * hst;
+            let emaS = ((e8 - e21) / (th || 1)) * 50;
+            emaS = Math.max(-100, Math.min(100, emaS));
+
+            // BB Component (-100 to 100)
+            const bb = MathCore.bb(prices, 20);
+            let bbS = 0;
+            if (p >= bb.u) bbS = -100;
+            else if (p <= bb.l) bbS = 100;
+            else bbS = ((bb.m - p) / (bb.u - bb.m)) * 100;
+
+            const totalDP = (rsiS * w.rsi) + (emaS * w.ema) + (bbS * w.bb);
+            return {
+                dp: Math.max(-100, Math.min(100, totalDP)),
+                scores: { rsi: rsiS, ema: emaS, bb: bbS }
+            };
+        }
+    };
+
+    // --- 3. VISUAL ENGINE ---
     function refreshVisuals() {
         const p = parseFloat(document.getElementById('price').innerText);
-        if (!p || isNaN(p) || state.prices.length < 50) return;
+        if (!p || state.prices.length < 10) return;
 
-        const profile = Profiles[state.speed];
-        const th = p * state.hysteresis;
-        document.getElementById('active-logic-tag').innerText = profile.logic;
+        const analysis = WDE.calculate(state.prices, state.speed, state.hysteresis);
+        state.currentDP = analysis.dp;
 
-        let sigA='neutral', sigB='neutral', sigC='neutral', decision=0, color='var(--neon-magenta)';
+        // Update Chips
+        document.getElementById('ind-ema').className = 'chip ' + (analysis.scores.ema > 20 ? 'active-buy' : (analysis.scores.ema < -20 ? 'active-sell' : ''));
+        document.getElementById('ind-rsi').className = 'chip ' + (analysis.scores.rsi > 20 ? 'active-buy' : (analysis.scores.rsi < -20 ? 'active-sell' : ''));
+        document.getElementById('ind-vol').className = 'chip ' + (analysis.scores.bb > 20 ? 'active-buy' : (analysis.scores.bb < -20 ? 'active-sell' : ''));
 
-        // Логика визуализации в зависимости от режима
-        switch(profile.logic) {
-            case "REVERSION":
-                const bb = MathCore.bb(state.prices, 20);
-                const rsiS = MathCore.rsi(state.prices, 7);
-                sigA = p <= bb.l ? 'active-buy' : (p >= bb.u ? 'active-sell' : '');
-                sigB = rsiS < 30 ? 'active-buy' : (rsiS > 70 ? 'active-sell' : '');
-                decision = Math.max(0, Math.min(100, (Math.abs(p - bb.m) / (bb.u - bb.m)) * 100));
-                color = p < bb.m ? 'var(--neon-green)' : 'var(--neon-red)';
-                break;
-
-            case "MOMENTUM":
-            case "TRIPLE_CONF":
-                const e8 = MathCore.ema(state.prices, 8);
-                const e21 = MathCore.ema(state.prices, 21);
-                sigA = e8 > e21 + th ? 'active-buy' : (e8 < e21 - th ? 'active-sell' : '');
-                decision = Math.min(100, (Math.abs(e8 - e21) / (th || 0.1)) * 100);
-                color = e8 > e21 ? 'var(--neon-green)' : 'var(--neon-red)';
-                break;
-            
-            default:
-                const e50 = MathCore.ema(state.prices, 50);
-                const e200 = MathCore.ema(state.prices, 200);
-                sigA = e50 > e200 ? 'active-buy' : 'active-sell';
-                decision = e50 > e200 ? 100 : 30;
-                color = e50 > e200 ? 'var(--neon-green)' : 'var(--neon-red)';
-        }
-
-        document.getElementById('ind-1').className = 'chip ' + sigA;
-        document.getElementById('ind-2').className = 'chip ' + sigB;
-        
+        // Update DP Bar
         const dBar = document.getElementById('decision-bar');
-        dBar.style.width = decision + "%";
+        const dpVal = document.getElementById('dp-val');
+        const absDP = Math.abs(analysis.dp);
+        
+        dBar.style.width = absDP + "%";
+        let color = 'var(--neon-magenta)';
+        if (analysis.dp > 20) color = 'var(--neon-green)';
+        else if (analysis.dp < -20) color = 'var(--neon-red)';
+        
         dBar.style.background = color;
         dBar.style.boxShadow = `0 0 15px ${color}`;
+        dpVal.innerText = analysis.dp.toFixed(1) + "%";
+        dpVal.style.color = color;
     }
 
-    // --- 5. TRADE EXECUTION ---
+    // --- 4. EXECUTION ---
     function log(msg, type='', sub=false) {
         const t = document.getElementById('terminal'), d = document.createElement('div');
         d.className = sub ? 'log-sub' : `log ${type}`;
         d.innerHTML = sub ? `>> ${msg}` : `[${new Date().toLocaleTimeString([],{hour12:false})}] ${msg}`;
-        t.prepend(d); if(t.children.length > 40) t.lastChild.remove();
+        t.prepend(d); if(t.children.length > 30) t.lastChild.remove();
     }
 
     function trade(side, price) {
@@ -333,77 +329,48 @@
         if (side === 'LONG' || side === 'SHORT') {
             state.position = { price, amount: (state.balance || 10000)/price, type: side, t: Date.now() };
             state.balance = 0;
-            log(`EXECUTE_${side} @ ${price.toFixed(2)}`, side.toLowerCase()+'-log');
+            log(`WDE_SIGNAL_${side} @ ${price.toFixed(2)}`, side.toLowerCase()+'-log');
         } else if (side === 'CLOSE') {
             const p = state.position; if(!p) return;
             const pnl = (p.type==='LONG') ? ((price/p.price-1)*100) : ((1-price/p.price)*100);
             state.balance = (p.type==='LONG')? p.amount * price : (p.amount * p.price + (p.price - price) * p.amount);
             
-            log(`CLOSED_${p.type} | PROFIT: ${pnl.toFixed(2)}%`, 'close-log');
-            log(`IN: ${p.price.toFixed(2)} | OUT: ${price.toFixed(2)} | BAL: $${state.balance.toFixed(2)}`, '', true);
-            
+            log(`EXIT_SMART | PNL: ${pnl.toFixed(2)}%`, 'close-log');
             state.history.push({ type: p.type, pnl });
             if(state.history.length > 10) state.history.shift();
-            
             state.position = null;
         }
         state.lastTradeT = Date.now();
-        db.ref('orakel_v8').set({ 
+        db.ref('orakel_v8').update({ 
             bal: state.balance, pos: state.position, run: state.running, 
-            spd: state.speed, hst: state.hysteresis, lastP: price, hist: state.history 
+            spd: state.speed, hst: state.hysteresis, hist: state.history 
         });
     }
 
-    // --- 6. MULTI-ENGINE BRAIN ---
     function brain() {
         const p = parseFloat(document.getElementById('price').innerText);
         if (!p || isNaN(p) || !state.isMaster) return;
 
-        const profile = Profiles[state.speed];
-        state.prices.push(p); if(state.prices.length > 1200) state.prices.shift();
+        state.prices.push(p); if(state.prices.length > 1000) state.prices.shift();
         
-        refreshVisuals();
+        const analysis = WDE.calculate(state.prices, state.speed, state.hysteresis);
+        const dp = analysis.dp;
 
-        if (!state.running || (Date.now() - state.lastTradeT < 5000)) return;
+        if (!state.running || (Date.now() - state.lastTradeT < 3000)) return;
 
-        const th = p * state.hysteresis;
-        const e8 = MathCore.ema(state.prices, 8);
-        const e21 = MathCore.ema(state.prices, 21);
-        const rsi = MathCore.rsi(state.prices, 14);
-
-        switch(profile.logic) {
-            case "REVERSION":
-                const bb = MathCore.bb(state.prices, 20);
-                const r7 = MathCore.rsi(state.prices, 7);
-                if (!state.position) {
-                    if (p <= bb.l && r7 < 30) trade('LONG', p);
-                    else if (p >= bb.u && r7 > 70) trade('SHORT', p);
-                } else {
-                    if ((state.position.type === 'LONG' && p >= bb.m) || (state.position.type === 'SHORT' && p <= bb.m)) trade('CLOSE', p);
-                }
-                break;
-
-            case "MOMENTUM":
-            case "TRIPLE_CONF":
-                const eTrend = profile.logic === "TRIPLE_CONF" ? MathCore.ema(state.prices, 200) : p;
-                if (!state.position) {
-                    if (p >= eTrend && e8 > e21 + th && rsi > 52) trade('LONG', p);
-                    else if (p <= eTrend && e8 < e21 - th && rsi < 48) trade('SHORT', p);
-                } else {
-                    if ((state.position.type === 'LONG' && e8 < e21) || (state.position.type === 'SHORT' && e8 > e21)) trade('CLOSE', p);
-                }
-                break;
-
-            case "GOLDEN_CROSS":
-                const e50 = MathCore.ema(state.prices, 50);
-                const e200 = MathCore.ema(state.prices, 200);
-                if (!state.position && e50 > e200 + th) trade('LONG', p);
-                else if (state.position && e50 < e200) trade('CLOSE', p);
-                break;
+        // ENTRY LOGIC (DP > 65%)
+        if (!state.position) {
+            if (dp > 65) trade('LONG', p);
+            else if (dp < -65) trade('SHORT', p);
+        } 
+        // SMART EXIT (DP < 20%)
+        else {
+            if (state.position.type === 'LONG' && dp < 20) trade('CLOSE', p);
+            else if (state.position.type === 'SHORT' && dp > -20) trade('CLOSE', p);
         }
     }
 
-    // --- 7. NETWORK & SYNC ---
+    // --- 5. NETWORK & SYNC ---
     function initNet() {
         const ws = new WebSocket('wss://stream.binance.com:443/ws/btcusdt@ticker');
         ws.onmessage = (e) => {
@@ -438,9 +405,12 @@
 
     db.ref('orakel_v8').on('value', (s) => {
         const d = s.val(); if (!d) return;
-        state.balance = d.bal; state.position = d.pos; state.running = d.run;
-        if(d.hist) { 
-            state.history = d.hist; 
+        state.balance = d.bal || 10000; 
+        state.position = d.pos || null; 
+        state.running = d.run !== undefined ? d.run : true;
+        
+        if(d.hist) {
+            state.history = d.hist;
             const box = document.getElementById('history-box');
             box.innerHTML = '';
             state.history.slice(-3).forEach(h => {
@@ -449,19 +419,23 @@
                 box.appendChild(i);
             });
         }
+
         if (state.speed != d.spd) {
-            state.speed = d.spd;
-            document.getElementById('spd-sld').value = d.spd;
-            document.getElementById('spd-lbl').innerText = Profiles[d.spd].n;
-            document.getElementById('opt-val').innerText = (Profiles[d.spd].optH * 100).toFixed(3);
-            if (state.isMaster) { clearInterval(window.bT); window.bT = setInterval(brain, Profiles[d.spd].i); }
+            state.speed = d.spd || 3;
+            document.getElementById('spd-sld').value = state.speed;
+            document.getElementById('spd-lbl').innerText = Profiles[state.speed].n;
+            document.getElementById('active-logic-tag').innerText = Profiles[state.speed].n + "_CORE";
+            if (state.isMaster) { clearInterval(window.bT); window.bT = setInterval(brain, Profiles[state.speed].i); }
         }
-        state.hysteresis = d.hst;
-        document.getElementById('hst-sld').value = d.hst * 100000;
-        document.getElementById('hst-lbl').innerText = (d.hst * 100).toFixed(3) + "%";
-        refreshVisuals();
+        state.hysteresis = d.hst || 0.00065;
+        document.getElementById('hst-sld').value = state.hysteresis * 100000;
+        document.getElementById('hst-lbl').innerText = (state.hysteresis * 100).toFixed(3) + "%";
+
+        const stopBtn = document.getElementById('stop-btn');
+        if(!state.running) stopBtn.classList.add('active'); else stopBtn.classList.remove('active');
     });
 
+    // --- 6. CONTROLS ---
     document.getElementById('spd-sld').oninput = function() {
         const n = parseInt(this.value);
         db.ref('orakel_v8').update({ spd: n, hst: Profiles[n].optH });
@@ -469,9 +443,6 @@
 
     document.getElementById('hst-sld').oninput = function() {
         const h = parseFloat(this.value)/100000;
-        state.hysteresis = h;
-        document.getElementById('hst-lbl').innerText = (h * 100).toFixed(3) + "%";
-        refreshVisuals();
         db.ref('orakel_v8').update({ hst: h });
     };
 
@@ -481,10 +452,15 @@
         db.ref('orakel_v8').update({ run: !state.running });
     };
 
+    document.getElementById('master-toggle').onchange = function() {
+        state.isMaster = this.checked;
+        log(state.isMaster ? "NODE_PROMOTED_TO_MASTER" : "NODE_SWITCHED_TO_OBSERVER");
+    };
+
     window.onload = () => { 
         initNet(); 
         setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString(), 1000);
-        log("SYSTEM_V8.2_OMNI_CORE_READY", "sys-log"); 
+        log("SYSTEM_V8.2_WDE_READY", "sys-log"); 
     };
 </script>
 </body>
