@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIT_ORAKUL // TOTAL_CONTROL_V4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ORAKUL V5 // REVERSED</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -18,107 +18,129 @@
             --bg-dark: #050505;
         }
 
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
             background-color: var(--bg-dark);
             color: var(--neon-cyan);
             font-family: 'Courier New', monospace;
-            margin: 0; padding: 20px;
+            margin: 0; padding: 10px;
             display: flex; flex-direction: column;
             height: 100vh; overflow: hidden;
             text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        /* Эффект сканирования */
+        body::after {
+            content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 100;
         }
 
         header {
             display: flex; justify-content: space-between;
-            border-bottom: 2px solid var(--neon-cyan);
-            padding-bottom: 10px; margin-bottom: 20px;
+            border-bottom: 1px solid var(--neon-cyan);
+            padding-bottom: 5px; margin-bottom: 10px;
+            font-size: 10px;
         }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .main-display {
+            display: flex; flex-direction: column; gap: 10px;
+        }
 
         .node {
-            background: rgba(0, 243, 255, 0.03);
+            background: rgba(0, 243, 255, 0.05);
             border: 1px solid var(--neon-cyan);
-            padding: 15px; position: relative;
-            transition: all 0.5s ease;
+            padding: 12px; position: relative;
         }
 
-        .node-label { font-size: 10px; color: var(--neon-magenta); margin-bottom: 10px; }
+        .node-label { font-size: 9px; color: var(--neon-magenta); margin-bottom: 5px; }
         
         .big-val { 
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            transition: color 0.5s ease;
-            text-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-size: 2rem; font-weight: bold; 
+            transition: all 0.3s ease;
         }
 
-        /* Цвета баланса */
         .status-fiat { color: var(--neon-yellow) !important; text-shadow: 0 0 10px var(--neon-yellow); }
         .status-long { color: var(--neon-green) !important; text-shadow: 0 0 10px var(--neon-green); }
         .status-short { color: var(--neon-red) !important; text-shadow: 0 0 10px var(--neon-red); }
 
-        .slider-box { margin-top: 15px; border-top: 1px solid #222; padding-top: 10px; }
-        input[type=range] {
-            width: 100%; cursor: pointer; accent-color: var(--neon-magenta);
-            background: #111;
+        .controls {
+            display: grid; grid-template-columns: 1fr 100px; gap: 10px;
+            margin-top: 5px;
         }
 
-        #log-container {
-            flex-grow: 1; margin-top: 20px;
+        #stop-btn {
+            background: none; border: 1px solid var(--neon-red);
+            color: var(--neon-red); font-family: inherit;
+            font-weight: bold; cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #stop-btn.active { background: var(--neon-red); color: black; box-shadow: 0 0 15px var(--neon-red); }
+
+        input[type=range] { width: 100%; accent-color: var(--neon-magenta); }
+
+        #terminal {
+            flex-grow: 1; margin-top: 10px;
             background: rgba(0,0,0,0.9);
             border: 1px solid var(--neon-magenta);
-            padding: 10px; overflow-y: auto;
-            box-shadow: inset 0 0 15px rgba(255, 0, 255, 0.1);
+            padding: 8px; overflow-y: auto;
+            font-size: 10px; line-height: 1.2;
         }
 
-        .log-entry { font-size: 11px; margin-bottom: 4px; border-left: 2px solid var(--neon-cyan); padding-left: 8px; }
+        .log { margin-bottom: 3px; border-left: 2px solid var(--neon-cyan); padding-left: 5px; }
         .buy { color: var(--neon-green); border-color: var(--neon-green); }
         .short { color: var(--neon-red); border-color: var(--neon-red); }
-        .sys { color: var(--neon-cyan); }
 
-        .indicator-group { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
-        .chip { font-size: 9px; border: 1px solid #333; padding: 2px 5px; }
+        .chips { display: flex; gap: 5px; margin-top: 5px; }
+        .chip { font-size: 8px; border: 1px solid #333; padding: 1px 4px; }
         .chip.active { border-color: var(--neon-green); color: var(--neon-green); }
     </style>
 </head>
 <body>
 
 <header>
-    <div>ORACLE_SYSTEM: BIT_ORAKUL // NODE: LIVE</div>
-    <div id="clock">00:00:00</div>
+    <div>BIT_ORAKUL_V5 // REVERSED_CORE</div>
+    <div id="sys-clock">00:00:00</div>
 </header>
 
-<div class="grid">
+<div class="main-display">
     <div class="node">
-        <div class="node-label">MARKET_FEED</div>
+        <div class="node-label">MARKET_PULSE (BTC)</div>
         <div id="price" class="big-val" style="color: var(--neon-cyan)">00000.00</div>
-        <div class="indicator-group">
-            <div id="ind-ema" class="chip">EMA</div>
-            <div id="ind-rsi" class="chip">RSI</div>
-            <div id="ind-bb" class="chip">BB</div>
-        </div>
-        <div style="font-size: 10px; margin-top: 10px;">
-            MODE: <span id="mode-text" style="color:var(--neon-magenta)">MEDIUM</span>
+        <div class="chips">
+            <div id="ind-ema" class="chip">EMA_CROSS</div>
+            <div id="ind-rsi" class="chip">RSI_VOL</div>
+            <div id="ind-bb" class="chip">BB_LIMIT</div>
         </div>
     </div>
 
-    <div class="node" id="account-node">
-        <div class="node-label">LEDGER_STATE</div>
+    <div class="node">
+        <div class="node-label">LEDGER_STATE (USDT)</div>
         <div id="balance" class="big-val status-fiat">$10,000.00</div>
-        <div class="slider-box">
-            <div style="font-size: 9px; margin-bottom: 5px;">VELOCITY: <span id="speed-label">1-2 / DAY</span></div>
-            <input type="range" id="speed-slider" min="1" max="5" value="3">
+        <div style="font-size: 10px; margin-top: 5px; display: flex; justify-content: space-between;">
+            <span>POS: <span id="pos-type">FLAT</span></span>
+            <span id="pnl-val">0.00%</span>
         </div>
-        <div style="font-size: 10px; margin-top: 10px;">
-            PNL: <span id="pnl-val">0.00%</span> | POS: <span id="pos-type">FLAT</span>
+    </div>
+
+    <div class="node">
+        <div class="node-label">NEURAL_DYNAMICS</div>
+        <div class="controls">
+            <div>
+                <div style="font-size: 8px; margin-bottom: 2px;">VELOCITY: <span id="spd-lbl">SWING</span></div>
+                <input type="range" id="spd-sld" min="1" max="5" value="3">
+            </div>
+            <button id="stop-btn">STOP_AI</button>
         </div>
     </div>
 </div>
 
-<div id="log-container"></div>
+<div id="terminal"></div>
 
 <script>
-    // --- FIREBASE CONFIG (FROM YOUR SCREENSHOTS) ---
     const firebaseConfig = {
         apiKey: "AIzaSyDA5ol08AMQc3MmZMUYOLD9_P0RQLK9Fn4",
         authDomain: "bitorakul.firebaseapp.com",
@@ -134,192 +156,163 @@
 
     let state = {
         balance: 10000,
-        position: null, // { price, amount, type: 'LONG' | 'SHORT' }
+        position: null,
         prices: [],
-        speedMode: 3
+        speed: 3,
+        running: true
     };
 
-    const SpeedProfiles = {
-        1: { name: "SCALPER", label: "1-2 / MIN", interval: 2000, emaF: 3, emaS: 7, rsiP: 7, bbP: 10 },
-        2: { name: "INTRADAY", label: "1-2 / HOUR", interval: 10000, emaF: 8, emaS: 21, rsiP: 14, bbP: 20 },
-        3: { name: "SWING", label: "1-2 / DAY", interval: 60000, emaF: 12, emaS: 26, rsiP: 14, bbP: 20 },
-        4: { name: "TREND", label: "1-2 / WEEK", interval: 300000, emaF: 20, emaS: 50, rsiP: 21, bbP: 30 },
-        5: { name: "HODL", label: "1-2 / MONTH", interval: 3600000, emaF: 50, emaS: 200, rsiP: 21, bbP: 50 }
+    const Profiles = {
+        1: { n: "SCALP", i: 2000, ef: 3, es: 7, r: 7 },
+        2: { n: "INTRADAY", i: 10000, ef: 8, es: 21, r: 14 },
+        3: { n: "SWING", i: 60000, ef: 12, es: 26, r: 14 },
+        4: { n: "TREND", i: 300000, ef: 20, es: 50, r: 21 },
+        5: { n: "HODL", i: 3600000, ef: 50, es: 200, r: 21 }
     };
 
     const MathCore = {
-        ema: (data, n) => {
-            let k = 2 / (n + 1); let ema = data[0];
-            for (let i = 1; i < data.length; i++) ema = data[i] * k + ema * (1 - k);
-            return ema;
-        },
-        rsi: (data, n) => {
-            if (data.length <= n) return 50;
-            let g = 0, l = 0;
-            for (let i = data.length - n; i < data.length; i++) {
-                let d = data[i] - data[i-1];
-                if (d >= 0) g += d; else l -= d;
-            }
-            return 100 - (100 / (1 + (g/n)/((l/n)||1)));
-        },
-        bb: (data, n) => {
-            if (data.length < n) return {u:0, l:0, m:0};
-            let s = data.slice(-n); let m = s.reduce((a,b)=>a+b)/n;
-            let sd = Math.sqrt(s.map(x=>Math.pow(x-m,2)).reduce((a,b)=>a+b)/n);
-            return {u: m+(sd*2), l: m-(sd*2), m: m};
+        ema: (d, n) => { let k = 2/(n+1); let e = d[0]; for(let i=1;i<d.length;i++) e = d[i]*k+e*(1-k); return e; },
+        rsi: (d, n) => {
+            if(d.length <= n) return 50;
+            let g=0, l=0; for(let i=d.length-n; i<d.length; i++) { let diff = d[i]-d[i-1]; if(diff>=0) g+=diff; else l-=diff; }
+            return 100-(100/(1+(g/n)/((l/n)||1)));
         }
     };
 
-    // --- WAKE LOCK (KEEP SCREEN ON) ---
-    let wakeLock = null;
-    const requestWakeLock = async () => {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-                log("WAKE_LOCK: ACTIVE (SCREEN ON)", "sys");
-            }
-        } catch (err) { console.error(`${err.name}, ${err.message}`); }
-    };
-
-    function log(msg, type = '') {
-        const div = document.createElement('div');
-        div.className = `log-entry ${type}`;
-        div.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        const cont = document.getElementById('log-container');
-        cont.prepend(div);
-        if (cont.children.length > 50) cont.lastChild.remove();
+    function log(msg, type='') {
+        const t = document.getElementById('terminal');
+        const d = document.createElement('div');
+        d.className = `log ${type}`;
+        d.innerHTML = `> ${msg}`;
+        t.prepend(d);
+        if(t.children.length > 30) t.lastChild.remove();
     }
 
     async function sync() {
-        db.ref('orakel_v4_state').set({
-            balance: state.balance,
-            position: state.position,
-            speedMode: state.speedMode,
-            lastSync: Date.now()
-        });
+        db.ref('orakel_v5_final').set({ bal: state.balance, pos: state.position, run: state.running, spd: state.speed });
     }
 
     function trade(side, price) {
-        if (side === 'BUY' || side === 'SHORT') {
-            state.position = { price: price, amount: state.balance / price, type: side };
+        if (!state.running && side !== 'CLOSE') return;
+
+        if (side === 'LONG' || side === 'SHORT') {
+            state.position = { price, amount: state.balance / price, type: side };
             state.balance = 0;
-            const colorClass = side === 'BUY' ? 'buy' : 'short';
-            log(`>>> EXECUTE_${side}: BTC @ ${price.toFixed(2)}`, colorClass);
+            log(`EXECUTE_${side}: ${price.toFixed(2)}`, side.toLowerCase());
         } else if (side === 'CLOSE') {
-            const pos = state.position;
-            let finalBal;
-            if (pos.type === 'BUY') {
-                finalBal = pos.amount * price;
-            } else {
-                const profit = (pos.price - price) * pos.amount;
-                finalBal = (pos.amount * pos.price) + profit;
-            }
-            state.balance = finalBal;
-            log(`<<< CLOSE_${pos.type}: BTC @ ${price.toFixed(2)}. BAL: $${state.balance.toFixed(2)}`, 'sys');
+            if (!state.position) return;
+            const p = state.position;
+            state.balance = (p.type === 'LONG') ? p.amount * price : (p.amount * p.price) + (p.price - price) * p.amount;
+            log(`CLOSED_${p.type}: BAL $${state.balance.toFixed(2)}`, 'sys');
             state.position = null;
         }
         sync();
-        updateBalanceColor();
+        updateUI();
     }
 
-    function updateBalanceColor() {
-        const balEl = document.getElementById('balance');
-        balEl.className = 'big-val';
-        if (!state.position) {
-            balEl.classList.add('status-fiat');
-        } else if (state.position.type === 'BUY') {
-            balEl.classList.add('status-long');
-        } else {
-            balEl.classList.add('status-short');
-        }
+    function updateUI() {
+        const b = document.getElementById('balance');
+        b.className = 'big-val';
+        if (!state.position) b.classList.add('status-fiat');
+        else b.classList.add(state.position.type === 'LONG' ? 'status-long' : 'status-short');
+        document.getElementById('pos-type').innerText = state.position ? state.position.type : 'FLAT';
     }
 
     function brain() {
+        if (!state.running) return;
         const p = parseFloat(document.getElementById('price').innerText);
-        if (!p || p === 0) return;
+        if (!p) return;
+        state.prices.push(p); if(state.prices.length > 300) state.prices.shift();
+        
+        const conf = Profiles[state.speed];
+        if(state.prices.length < conf.es) return;
 
-        state.prices.push(p);
-        if (state.prices.length > 300) state.prices.shift();
+        const ef = MathCore.ema(state.prices, conf.ef);
+        const es = MathCore.ema(state.prices, conf.es);
+        const r = MathCore.rsi(state.prices, conf.r);
+        
+        document.getElementById('ind-ema').className = `chip ${ef > es ? 'active' : ''}`;
+        document.getElementById('ind-rsi').className = `chip ${r > 50 ? 'active' : ''}`;
 
-        const conf = SpeedProfiles[state.speedMode];
-        if (state.prices.length < conf.emaS) return;
+        // --- REVERSE SAR LOGIC (Always-in-Market) ---
+        const threshold = p * 0.0001; // 0.01% hysteresis
 
-        const emaF = MathCore.ema(state.prices, conf.emaF);
-        const emaS = MathCore.ema(state.prices, conf.emaS);
-        const rsi = MathCore.rsi(state.prices, conf.rsiP);
-        const bb = MathCore.bb(state.prices, conf.bbP);
-
-        // UI Indicators
-        document.getElementById('ind-ema').className = `chip ${emaF > emaS ? 'active' : ''}`;
-        document.getElementById('ind-rsi').className = `chip ${rsi > 50 && rsi < 70 ? 'active' : ''}`;
-        document.getElementById('ind-bb').className = `chip ${p > bb.u ? 'active' : ''}`;
-
-        // Decision Logic (Always-in-Market)
         if (!state.position) {
-            if (emaF > emaS && p > bb.u && rsi > 52) trade('BUY', p);
-            else if (emaF < emaS && p < bb.l && rsi < 48) trade('SHORT', p);
+            if (ef > es + threshold) trade('LONG', p);
+            else if (ef < es - threshold) trade('SHORT', p);
         } else {
-            const pos = state.position;
-            if (pos.type === 'BUY') {
-                if (emaF < emaS || rsi > 75 || p < bb.m) trade('CLOSE', p);
-            } else {
-                if (emaF > emaS || rsi < 25 || p > bb.m) trade('CLOSE', p);
+            // Flip triggers
+            if (state.position.type === 'LONG' && ef < es - threshold) {
+                trade('CLOSE', p); trade('SHORT', p);
+            } else if (state.position.type === 'SHORT' && ef > es + threshold) {
+                trade('CLOSE', p); trade('LONG', p);
             }
         }
     }
 
-    // Slider
-    const slider = document.getElementById('speed-slider');
-    slider.oninput = function() {
-        state.speedMode = this.value;
-        const conf = SpeedProfiles[this.value];
-        document.getElementById('speed-label').innerText = conf.label;
-        document.getElementById('mode-text').innerText = conf.name;
-        log(`MODE_SHIFT: ${conf.name} ACTIVATED`, 'sys');
-        clearInterval(window.brainTimer);
-        window.brainTimer = setInterval(brain, conf.interval);
+    // Stop Button
+    document.getElementById('stop-btn').onclick = function() {
+        state.running = !state.running;
+        this.classList.toggle('active');
+        this.innerText = state.running ? 'STOP_AI' : 'START_AI';
+        if (!state.running && state.position) {
+            const p = parseFloat(document.getElementById('price').innerText);
+            trade('CLOSE', p);
+        }
+        log(state.running ? "AI_CORE: RE-ACTIVATED" : "AI_CORE: EMERGENCY_PAUSE", "sys");
         sync();
     };
 
-    // Binance
+    // Slider
+    const sld = document.getElementById('spd-sld');
+    sld.oninput = function() {
+        state.speed = this.value;
+        const c = Profiles[this.value];
+        document.getElementById('spd-lbl').innerText = c.n;
+        clearInterval(window.bT); window.bT = setInterval(brain, c.i);
+        log(`CORE_UPDATE: MODE_${c.n}`, "sys");
+        sync();
+    };
+
+    // WS Binance
     const ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker');
     ws.onmessage = (e) => {
-        const p = parseFloat(JSON.parse(e.data).c);
+        const d = JSON.parse(e.data);
+        const p = parseFloat(d.c);
         document.getElementById('price').innerText = p.toFixed(2);
-        
         if (state.position) {
             const pos = state.position;
-            let pnl = (pos.type === 'BUY') ? ((p / pos.price - 1) * 100) : ((pos.price / p - 1) * 100);
+            const pnl = (pos.type === 'LONG') ? ((p/pos.price-1)*100) : ((pos.price/p-1)*100);
             document.getElementById('pnl-val').innerText = pnl.toFixed(2) + "%";
             document.getElementById('pnl-val').style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
-            document.getElementById('balance').innerText = `$${((pos.type === 'BUY' ? pos.amount * p : (pos.amount * pos.price) + (pos.price - p) * pos.amount)).toFixed(2)}`;
-            document.getElementById('pos-type').innerText = pos.type;
+            const curBal = (pos.type === 'LONG') ? pos.amount * p : (pos.amount * pos.price) + (pos.price - p) * pos.amount;
+            document.getElementById('balance').innerText = `$${curBal.toFixed(2)}`;
         } else {
             document.getElementById('balance').innerText = `$${state.balance.toFixed(2)}`;
-            document.getElementById('pos-type').innerText = "FLAT";
+            document.getElementById('pnl-val').innerText = "0.00%";
         }
     };
 
     window.onload = () => {
-        requestWakeLock();
-        db.ref('orakel_v4_state').once('value').then(s => {
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
+        db.ref('orakel_v5_final').once('value').then(s => {
             const d = s.val();
-            if (d) {
-                state.balance = d.balance || 10000;
-                state.position = d.position || null;
-                state.speedMode = d.speedMode || 3;
-                slider.value = state.speedMode;
-                slider.oninput();
-                updateBalanceColor();
+            if (d) { 
+                state.balance = d.bal || 10000; 
+                state.position = d.pos || null;
+                state.running = (d.run !== undefined) ? d.run : true;
+                state.speed = d.spd || 3;
+                sld.value = state.speed;
+                if(!state.running) {
+                    const b = document.getElementById('stop-btn');
+                    b.classList.add('active'); b.innerText = 'START_AI';
+                }
             }
-            log("ORACLE_CORE_V4: ONLINE. DATABASE_LINK: STABLE.", "sys");
+            sld.oninput();
+            updateUI();
+            log("ORAKUL_V5_STABLE: LINKED", "sys");
         });
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
-        
-        // Re-request wake lock if tab is switched back
-        document.addEventListener('visibilitychange', () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') requestWakeLock();
-        });
+        setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString(), 1000);
     };
 </script>
 </body>
