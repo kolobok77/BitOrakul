@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIT-ORAKUL V7.4 // LEDGER_PRO</title>
+    <title>BIT-ORAKUL V7.5 // FULL_LEDGER</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -12,55 +12,69 @@
         :root {
             --neon-cyan: #00f3ff; --neon-magenta: #ff00ff; --neon-green: #39ff14;
             --neon-red: #ff3131; --neon-yellow: #fff200; --bg-dark: #050505;
+            --panel-bg: rgba(0, 243, 255, 0.05);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body {
             background-color: var(--bg-dark); color: var(--neon-cyan);
-            font-family: 'Courier New', monospace; margin: 0; padding: 10px;
+            font-family: 'Courier New', monospace; margin: 0; padding: 8px;
             display: flex; flex-direction: column; height: 100vh; overflow: hidden; text-transform: uppercase;
         }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon-cyan); padding-bottom: 5px; margin-bottom: 10px; font-size: 9px; }
+        body::before {
+            content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 3px; pointer-events: none; z-index: 1000;
+        }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon-cyan); padding-bottom: 5px; margin-bottom: 8px; font-size: 9px; }
         .node-stack { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-        .node { background: rgba(0, 243, 255, 0.05); border: 1px solid var(--neon-cyan); padding: 12px; position: relative; }
+        .node { background: var(--panel-bg); border: 1px solid var(--neon-cyan); padding: 12px; position: relative; box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1); }
         .node-label { font-size: 8px; color: var(--neon-magenta); margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .big-val { font-size: 1.8rem; font-weight: bold; }
+        .big-val { font-size: 1.8rem; font-weight: bold; transition: 0.2s; }
         
         .status-fiat { color: var(--neon-yellow) !important; text-shadow: 0 0 10px var(--neon-yellow); }
         .status-long { color: var(--neon-green) !important; text-shadow: 0 0 10px var(--neon-green); }
         .status-short { color: var(--neon-red) !important; text-shadow: 0 0 10px var(--neon-red); }
 
         .indicator-row { display: flex; gap: 5px; margin-top: 5px; }
-        .chip { font-size: 7px; border: 1px solid #333; padding: 2px 4px; color: #444; }
-        .chip.buy { border-color: var(--neon-green); color: var(--neon-green); }
-        .chip.sell { border-color: var(--neon-red); color: var(--neon-red); }
+        .chip { font-size: 7px; border: 1px solid #333; padding: 2px 4px; color: #444; transition: 0.3s; }
+        .chip.buy { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+        .chip.sell { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
         .chip.neutral { border-color: var(--neon-cyan); color: var(--neon-cyan); }
 
-        /* History Line Styles */
+        /* History Tape */
         .history-container { 
-            margin-top: 8px; border-top: 1px dashed #222; padding-top: 5px;
-            overflow: hidden; white-space: nowrap; display: flex; gap: 10px; font-size: 8px;
+            margin-top: 8px; border-top: 1px dashed #333; padding-top: 5px;
+            overflow-x: auto; white-space: nowrap; display: flex; gap: 10px; font-size: 8px;
+            scrollbar-width: none; /* Firefox */
         }
-        .hist-item { display: inline-flex; gap: 4px; opacity: 0.8; }
-        .pos-win { color: var(--neon-green); }
-        .pos-loss { color: var(--neon-red); }
+        .history-container::-webkit-scrollbar { display: none; }
+        .hist-item { display: inline-flex; gap: 4px; border: 1px solid #222; padding: 2px 4px; }
+        .pos-win { color: var(--neon-green); border-color: rgba(57, 255, 20, 0.3); }
+        .pos-loss { color: var(--neon-red); border-color: rgba(255, 49, 49, 0.3); }
 
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn { background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-family: inherit; padding: 8px; font-size: 10px; cursor: pointer; }
-        #stop-btn.active { background: var(--neon-red); color: black; border-color: var(--neon-red); }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+        .btn { background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-family: inherit; padding: 8px; font-size: 10px; cursor: pointer; font-weight: bold; }
+        #stop-btn { border-color: var(--neon-red); color: var(--neon-red); }
+        #stop-btn.active { background: var(--neon-red); color: black; box-shadow: 0 0 15px var(--neon-red); }
+        input[type=range] { width: 100%; accent-color: var(--neon-magenta); margin: 5px 0; }
+        .master-box { display: flex; align-items: center; justify-content: space-between; font-size: 9px; padding: 5px; border: 1px dashed var(--neon-magenta); }
 
-        #terminal { flex-grow: 1; margin-top: 10px; background: rgba(0,0,0,0.9); border: 1px solid var(--neon-magenta); padding: 8px; overflow-y: auto; font-size: 9px; }
+        #terminal { flex-grow: 1; margin-top: 8px; background: rgba(0,0,0,0.9); border: 1px solid var(--neon-magenta); padding: 8px; overflow-y: auto; font-size: 9px; line-height: 1.2; }
         .log { margin-bottom: 2px; border-left: 2px solid var(--neon-cyan); padding-left: 6px; }
         .buy-log { color: var(--neon-green); border-color: var(--neon-green); }
         .sell-log { color: var(--neon-red); border-color: var(--neon-red); }
+        .warn-log { color: var(--neon-yellow); border-color: var(--neon-yellow); }
         .win-log { color: var(--neon-green); }
         .loss-log { color: var(--neon-red); }
-        .warn-log { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+        .sys-log { color: #888; }
+        #online-count { color: var(--neon-green); }
+        .eco-label { color: var(--neon-yellow); display: none; margin-left: 4px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div>NET: <span id="online-count">1</span> NODES // <span id="net-status">SYNC</span></div>
+    <div>NET: <span id="online-count">1</span> NODES // <span id="net-status">SYNC</span> <span id="eco-label" class="eco-label">[ECO]</span></div>
     <div id="sys-clock">00:00:00</div>
 </header>
 
@@ -86,10 +100,10 @@
     </div>
 
     <div class="node">
-        <div class="node-label">NEURAL_DYNAMICS</div>
+        <div class="node-label">NEURAL_DYNAMICS: <span id="spd-lbl" style="color:var(--neon-magenta)">SWING</span></div>
         <input type="range" id="spd-sld" min="1" max="5" value="3">
         <div class="controls">
-            <div style="font-size:9px; border:1px dashed var(--neon-magenta); padding:5px; display:flex; justify-content:space-between; align-items:center;">
+            <div class="master-box">
                 <span>MASTER</span><input type="checkbox" id="master-toggle" checked>
             </div>
             <button id="stop-btn" class="btn">STOP_AI</button>
@@ -107,103 +121,166 @@
     };
     firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
-    let state = { balance: 10000, position: null, prices: [], history: [], speed: 3, running: true, isMaster: true };
-    const Profiles = { 1:{n:"SCALP",i:2000,ef:3,es:7,r:7,b:10}, 2:{n:"INTRADAY",i:10000,ef:8,es:21,r:14,b:20}, 3:{n:"SWING",i:60000,ef:12,es:26,r:14,b:20}, 4:{n:"TREND",i:300000,ef:20,es:50,r:21,b:30}, 5:{n:"HODL",i:3600000,ef:50,es:200,r:21,b:50} };
+    let state = { balance: 10000, position: null, prices: [], history: [], speed: 3, running: true, isMaster: true, isEco: false, lastT: Date.now() };
+    const Profiles = { 
+        1:{n:"SCALP",i:2000,ef:3,es:7,r:7,b:10}, 
+        2:{n:"INTRADAY",i:10000,ef:8,es:21,r:14,b:20}, 
+        3:{n:"SWING",i:60000,ef:12,es:26,r:14,b:20}, 
+        4:{n:"TREND",i:300000,ef:20,es:50,r:21,b:30}, 
+        5:{n:"HODL",i:3600000,ef:50,es:200,r:21,b:50} 
+    };
+
+    // MATH & AUDIO
+    const aCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(f=440,d=0.1){ try{if(aCtx.state==='suspended')aCtx.resume();const o=aCtx.createOscillator(),g=aCtx.createGain();o.connect(g);g.connect(aCtx.destination);o.frequency.value=f;g.gain.setValueAtTime(0.05,aCtx.currentTime);o.start();o.stop(aCtx.currentTime+d);}catch(e){} }
+
+    const MathCore = {
+        ema: (d,n) => { let k=2/(n+1), e=d[0]; for(let i=1;i<d.length;i++) e=d[i]*k+e*(1-k); return e; },
+        rsi: (d,n) => {
+            if(d.length<=n) return 50;
+            let g=0,l=0; for(let i=d.length-n;i<d.length;i++){ let diff=d[i]-d[i-1]; if(diff>=0)g+=diff; else l-=diff; }
+            return 100-(100/(1+(g/n)/((l/n)||1)));
+        },
+        bb: (d,n) => {
+            if(d.length<n) return {u:0,m:0,l:0}; let s=d.slice(-n), m=s.reduce((a,b)=>a+b)/n;
+            let sd=Math.sqrt(s.map(x=>Math.pow(x-m,2)).reduce((a,b)=>a+b)/n); return {u:m+(sd*2),m:m,l:m-(sd*2)};
+        }
+    };
 
     function log(msg, type='') {
         const t = document.getElementById('terminal'), d = document.createElement('div');
-        d.className = `log ${type}`; d.innerHTML = `> ${msg}`; t.prepend(d);
-        if(t.children.length > 25) t.lastChild.remove();
+        d.className = `log ${type}`; d.innerHTML = `[${new Date().toLocaleTimeString([],{hour12:false})}] > ${msg}`;
+        t.prepend(d); if(t.children.length > 30) t.lastChild.remove();
     }
 
     function updateHistoryUI() {
-        const container = document.getElementById('history-line');
-        container.innerHTML = '';
+        const line = document.getElementById('history-line'); line.innerHTML = '';
         state.history.forEach(t => {
             const item = document.createElement('div');
-            item.className = `hist-item ${t.pnl >= 0 ? 'pos-win' : 'pos-loss'}`;
-            item.innerHTML = `[${t.type} ${t.in.toFixed(0)}→${t.out.toFixed(0)} ${t.pnl > 0 ? '+' : ''}${t.pnl}%]`;
-            container.appendChild(item);
+            const isWin = parseFloat(t.pnl) >= 0;
+            item.className = `hist-item ${isWin ? 'pos-win' : 'pos-loss'}`;
+            item.innerHTML = `${t.type} ${t.in.toFixed(0)}→${t.out.toFixed(0)} ${isWin?'+':''}${t.pnl}%`;
+            line.appendChild(item);
         });
     }
 
+    // CORE TRADE
     function trade(side, price) {
         if (!state.isMaster) return;
         if (side === 'LONG' || side === 'SHORT') {
-            state.position = { price, amount: state.balance/price, type: side };
+            state.position = { price, amount: (state.balance || 10000)/price, type: side };
             state.balance = 0;
-            log(`EXECUTE_${side} @ ${price.toFixed(2)}`, side.toLowerCase()+'-log');
+            log(`EXECUTE_${side} @ ${price.toFixed(2)}`, side.toLowerCase()+'-log'); beep(880);
         } else if (side === 'CLOSE') {
             const p = state.position; if(!p) return;
             const pnl = (p.type === 'LONG') ? (price/p.price-1) : (p.price/price-1);
             const pnlPct = (pnl*100).toFixed(2);
-            state.balance = (p.type==='LONG') ? p.amount*price : (p.amount*p.price)+(p.price-price)*p.amount;
+            state.balance = (p.type==='LONG')? p.amount*price : (p.amount*p.price)+(p.price-price)*p.amount;
             
-            // Новое логирование
             log(`CLOSED_${p.type}`, 'warn-log');
             log(`EXIT: ${price.toFixed(2)} | PNL: ${pnlPct}%`, pnl >= 0 ? 'win-log' : 'loss-log');
 
-            // Обновление истории (максимум 5 записей)
             state.history.unshift({ type: p.type, in: p.price, out: price, pnl: pnlPct });
-            if(state.history.length > 5) state.history.pop();
-            
-            state.position = null;
+            if(state.history.length > 6) state.history.pop();
+            state.position = null; beep(440);
         }
-        db.ref('orakel_v7_ledger').set({ bal: state.balance, pos: state.position, hist: state.history, run: state.running, spd: state.speed, lastP: price });
+        db.ref('orakel_v7_final').set({ bal: state.balance, pos: state.position, hist: state.history, run: state.running, spd: state.speed, lastP: price, time: Date.now() });
     }
 
     function brain() {
-        const p = parseFloat(document.getElementById('price').innerText); if(!p || isNaN(p) || !state.isMaster) return;
+        const p = parseFloat(document.getElementById('price').innerText);
+        if (!p || isNaN(p) || !state.isMaster) return;
+
         state.prices.push(p); if(state.prices.length > 300) state.prices.shift();
         const c = Profiles[state.speed]; if(state.prices.length < c.es) return;
-        const ef=2/(c.ef+1), es=2/(c.es+1); // Simple EMA factors
-        // ... упрощенный расчет для краткости, логика та же
-        if(!state.running) return;
-        // Здесь твоя логика переворотов...
+
+        const ef=MathCore.ema(state.prices, c.ef), es=MathCore.ema(state.prices, c.es), r=MathCore.rsi(state.prices, c.r), bb=MathCore.bb(state.prices, c.b);
+        const th = p * 0.0002;
+
+        document.getElementById('ind-ema').className = 'chip ' + (ef > es+th ? 'buy' : (ef < es-th ? 'sell' : 'neutral'));
+        document.getElementById('ind-rsi').className = 'chip ' + (r > 55 ? 'buy' : (r < 45 ? 'sell' : 'neutral'));
+        document.getElementById('ind-bb').className = 'chip ' + (p < bb.l ? 'buy' : (p > bb.u ? 'sell' : 'neutral'));
+
+        if (!state.running) return;
+        if (!state.position) {
+            if (ef > es+th && r > 52) trade('LONG', p);
+            else if (ef < es-th && r < 48) trade('SHORT', p);
+        } else {
+            if (state.position.type === 'LONG' && ef < es-th) { trade('CLOSE', p); trade('SHORT', p); }
+            else if (state.position.type === 'SHORT' && ef > es+th) { trade('CLOSE', p); trade('LONG', p); }
+        }
     }
 
+    // NETWORK
+    let ws;
     function initNet() {
-        const ws = new WebSocket('wss://stream.binance.com:443/ws/btcusdt@ticker');
+        if (state.isEco && !state.isMaster) return;
+        ws = new WebSocket('wss://stream.binance.com:443/ws/btcusdt@ticker');
+        ws.onopen = () => { document.getElementById('net-status').innerText="ONLINE"; log("LINK: BINANCE_UP","sys-log"); };
         ws.onmessage = (e) => {
-            const p = parseFloat(JSON.parse(e.data).c);
+            const p = parseFloat(JSON.parse(e.data).c); state.lastT = Date.now();
             document.getElementById('price').innerText = p.toFixed(2);
             document.getElementById('last-update').innerText = new Date().toLocaleTimeString([],{hour12:false});
-            if (state.position) {
+            
+            const balEl = document.getElementById('balance');
+            if(state.position){
                 const pos = state.position;
-                const pnl = (pos.type === 'LONG') ? ((p/pos.price-1)*100) : ((pos.price/p-1)*100);
-                document.getElementById('pnl-val').innerText = pnl.toFixed(2) + "%";
-                document.getElementById('pnl-val').style.color = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
-                const curB = (pos.type === 'LONG') ? pos.amount*p : (pos.amount*pos.price)+(pos.price-p)*pos.amount;
-                document.getElementById('balance').innerText = `$${curB.toFixed(2)}`;
-                document.getElementById('balance').className = 'big-val ' + (pos.type === 'LONG' ? 'status-long' : 'status-short');
+                const pnl = (pos.type==='LONG')?((p/pos.price-1)*100):((pos.price/p-1)*100);
+                const curB = (pos.type==='LONG')?pos.amount*p:(pos.amount*pos.price)+(pos.price-p)*pos.amount;
+                balEl.innerText = `$${curB.toFixed(2)}`;
+                balEl.className = 'big-val '+(pos.type==='LONG'?'status-long':'status-short');
+                document.getElementById('pnl-val').innerText = pnl.toFixed(2)+"%";
+                document.getElementById('pnl-val').style.color = pnl>=0?'var(--neon-green)':'var(--neon-red)';
+                document.getElementById('pos-type').innerText = pos.type;
             } else {
-                document.getElementById('balance').innerText = `$${state.balance.toFixed(2)}`;
-                document.getElementById('balance').className = 'big-val status-fiat';
+                balEl.innerText = `$${state.balance.toFixed(2)}`;
+                balEl.className = 'big-val status-fiat';
+                document.getElementById('pnl-val').innerText = "0.00%";
+                document.getElementById('pos-type').innerText = "FLAT";
             }
         };
+        ws.onclose = () => { document.getElementById('net-status').innerText="LOST"; if(!state.isEco) setTimeout(initNet, 3000); };
     }
 
-    db.ref('orakel_v7_ledger').on('value', (s) => {
+    db.ref('orakel_v7_final').on('value', (s) => {
         const d = s.val(); if(!d) return;
-        state.balance = d.bal; state.position = d.pos; state.history = d.hist || []; state.running = d.run;
+        state.balance=d.bal; state.position=d.pos; state.history=d.hist||[]; state.running=d.run;
+        if(state.isEco && !state.isMaster && d.lastP) document.getElementById('price').innerText = d.lastP.toFixed(2);
+        if(state.speed != d.spd) {
+            state.speed = d.spd; document.getElementById('spd-sld').value=d.spd;
+            document.getElementById('spd-lbl').innerText = Profiles[d.spd].n;
+            if(state.isMaster){ clearInterval(window.bT); window.bT=setInterval(brain, Profiles[d.spd].i); }
+        }
+        document.getElementById('stop-btn').className = state.running ? 'btn' : 'btn active';
         updateHistoryUI();
-        // ... остальная синхронизация (speed, кнопки)
     });
 
-    const pRef = db.ref('presence').push(); pRef.onDisconnect().remove(); pRef.set(true);
-    db.ref('presence').on('value', s => document.getElementById('online-count').innerText = s.numChildren());
+    const pRef = db.ref('presence_v7').push(); pRef.onDisconnect().remove(); pRef.set(true);
+    let initCheck = true;
+    db.ref('presence_v7').on('value', s => {
+        const count = s.numChildren(); document.getElementById('online-count').innerText = count;
+        if(initCheck && count > 1) { document.getElementById('master-toggle').checked=false; state.isMaster=false; }
+        initCheck = false;
+    });
 
-    window.onload = () => {
-        initNet();
-        setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString([],{hour12:false}), 1000);
-        log("SYSTEM_READY: V7.4_LEDGER_PRO", "sys-log");
-    };
-    
-    // UI Events (Master toggle, speed, stop)
     document.getElementById('stop-btn').onclick = () => {
         const p = parseFloat(document.getElementById('price').innerText);
         if(state.running && state.position) trade('CLOSE', p);
-        db.ref('orakel_v7_ledger').update({ run: !state.running });
+        db.ref('orakel_v7_final').update({ run: !state.running });
+    };
+
+    document.getElementById('master-toggle').onchange = function() {
+        state.isMaster = this.checked; log(state.isMaster?"CORE: MASTER":"CORE: OBSERVER","sys-log");
+        if(state.isMaster){ if(!ws||ws.readyState!==1)initNet(); window.bT=setInterval(brain, Profiles[state.speed].i); }
+        else { clearInterval(window.bT); if(state.isEco&&ws)ws.close(); }
+    };
+
+    document.getElementById('spd-sld').oninput = function() { db.ref('orakel_v7_final').update({spd:parseInt(this.value)}); };
+
+    window.onload = () => {
+        const conn = navigator.connection; if(conn && (conn.type==='cellular'||conn.saveData)){ state.isEco=true; document.getElementById('eco-label').style.display='inline'; }
+        initNet(); setInterval(()=>document.getElementById('sys-clock').innerText=new Date().toLocaleTimeString([],{hour12:false}),1000);
+        log("SYSTEM_READY: V7.5_TOTAL_LEDGER", "sys-log");
     };
 </script>
 </body>
