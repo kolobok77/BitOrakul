@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BIT-ORAKUL V7.3 // ECO_UNITY</title>
+    <title>BIT-ORAKUL V7.4 // ECO_UNITY_LOGGER</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -60,14 +60,14 @@
         
         .big-val { font-size: 1.8rem; font-weight: bold; transition: all 0.2s ease; }
         
-        /* Цвета баланса */
+        /* Цвета статусов */
         .status-fiat { color: var(--neon-yellow) !important; text-shadow: 0 0 10px var(--neon-yellow); }
         .status-long { color: var(--neon-green) !important; text-shadow: 0 0 10px var(--neon-green); }
         .status-short { color: var(--neon-red) !important; text-shadow: 0 0 10px var(--neon-red); }
+        .status-close { color: var(--neon-yellow) !important; }
 
         .indicator-row { display: flex; gap: 5px; margin-top: 5px; }
         
-        /* Светофор индикаторов */
         .chip { 
             font-size: 7px; border: 1px solid #333; padding: 2px 4px; 
             color: #444; transition: 0.3s; 
@@ -75,6 +75,14 @@
         .chip.buy { border-color: var(--neon-green); color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
         .chip.sell { border-color: var(--neon-red); color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
         .chip.neutral { border-color: var(--neon-cyan); color: var(--neon-cyan); }
+
+        /* Контейнер истории в Ledger */
+        .history-line {
+            display: flex; gap: 8px; font-size: 7px; overflow: hidden;
+            flex-direction: row-reverse; justify-content: flex-start;
+            flex-grow: 1; margin-right: 10px;
+        }
+        .hist-item { white-space: nowrap; border-right: 1px solid #333; padding-right: 8px; }
 
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 
@@ -99,13 +107,16 @@
             background: rgba(0,0,0,0.9);
             border: 1px solid var(--neon-magenta);
             padding: 10px; overflow-y: auto;
-            font-size: 9px; line-height: 1.2;
+            font-size: 9px; line-height: 1.3;
         }
 
-        .log { margin-bottom: 2px; border-left: 2px solid var(--neon-cyan); padding-left: 6px; }
-        .buy-log { color: var(--neon-green); }
-        .sell-log { color: var(--neon-red); }
-        .sys-log { color: #888; }
+        .log { margin-bottom: 4px; border-left: 2px solid var(--neon-cyan); padding-left: 6px; }
+        .log-sub { margin-bottom: 6px; font-size: 8px; padding-left: 10px; opacity: 0.9; }
+        
+        .buy-log { color: var(--neon-green); border-color: var(--neon-green); }
+        .sell-log { color: var(--neon-red); border-color: var(--neon-red); }
+        .close-log { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+        .sys-log { color: #888; border-color: #444; }
 
         #online-count { color: var(--neon-green); font-weight: bold; }
         .eco-badge { color: var(--neon-yellow); display: none; margin-left: 5px; }
@@ -135,9 +146,12 @@
     <div class="node">
         <div class="node-label">LEDGER_STATE: FIREBASE_CLOUD</div>
         <div id="balance" class="big-val status-fiat">$10,000.00</div>
-        <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:10px;">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:10px;">
             <span>POS: <span id="pos-type">FLAT</span></span>
-            <span id="pnl-val">0.00%</span>
+            <div id="history-box" class="history-line">
+                </div>
+            <span id="pnl-val" style="font-weight:bold;">0.00%</span>
         </div>
     </div>
 
@@ -181,7 +195,8 @@
         running: true,
         isMaster: true,
         isEco: false,
-        lastT: Date.now()
+        lastT: Date.now(),
+        history: []
     };
 
     const Profiles = {
@@ -218,10 +233,25 @@
     };
 
     // --- 3. UI ENGINE ---
-    function log(msg, type = '') {
-        const t = document.getElementById('terminal'), d = document.createElement('div');
-        d.className = `log ${type}`; d.innerHTML = `[${new Date().toLocaleTimeString([],{hour12:false})}] > ${msg}`;
-        t.prepend(d); if(t.children.length > 25) t.lastChild.remove();
+    function log(msg, type = '', isSub = false) {
+        const t = document.getElementById('terminal');
+        const d = document.createElement('div');
+        d.className = isSub ? 'log-sub' : `log ${type}`;
+        d.innerHTML = isSub ? `>> ${msg}` : `[${new Date().toLocaleTimeString([],{hour12:false})}] > ${msg}`;
+        t.prepend(d); 
+        if(t.children.length > 40) t.lastChild.remove();
+    }
+
+    function updateHistoryUI() {
+        const box = document.getElementById('history-box');
+        box.innerHTML = '';
+        state.history.slice(-3).forEach(h => {
+            const span = document.createElement('div');
+            span.className = 'hist-item';
+            const color = h.pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+            span.innerHTML = `${h.type} <span style="color:${color}">${h.pnl.toFixed(1)}%</span>`;
+            box.appendChild(span);
+        });
     }
 
     function updateBalanceUI(p) {
@@ -239,6 +269,7 @@
             balEl.innerText = `$${state.balance.toFixed(2)}`;
             balEl.className = 'big-val status-fiat';
             document.getElementById('pnl-val').innerText = "0.00%";
+            document.getElementById('pnl-val').style.color = 'var(--neon-cyan)';
             document.getElementById('pos-type').innerText = "FLAT";
         }
     }
@@ -246,17 +277,41 @@
     // --- 4. TRADING & BRAIN ---
     function trade(side, price) {
         if (!state.isMaster) return;
+
         if (side === 'LONG' || side === 'SHORT') {
             state.position = { price, amount: (state.balance || 10000)/price, type: side };
             state.balance = 0;
-            log(`EXECUTE_${side}: ${price.toFixed(2)}`, side.toLowerCase()+'-log'); beep(880);
-        } else if (side === 'CLOSE') {
+            log(`EXECUTE_${side}: ${price.toFixed(2)}`, side.toLowerCase()+'-log');
+            beep(880);
+        } 
+        else if (side === 'CLOSE') {
             const p = state.position; if(!p) return;
+            const pnl = (p.type==='LONG') ? ((price/p.price-1)*100) : ((p.price/price-1)*100);
             state.balance = (p.type==='LONG')? p.amount * price : (p.amount * p.price + (p.price - price) * p.amount);
-            log(`CLOSED_${p.type}: BAL $${state.balance.toFixed(2)}`, 'sys-log');
-            state.position = null; beep(440);
+            
+            // Логирование закрытия
+            log(`CLOSED_${p.type}: BAL $${state.balance.toFixed(2)}`, 'close-log');
+            const pnlColor = pnl >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+            log(`ENTRY: ${p.price.toFixed(2)} | EXIT: ${price.toFixed(2)} | PNL: <span style="color:${pnlColor}">${pnl.toFixed(2)}%</span>`, '', true);
+            
+            // Обновление истории
+            state.history.push({ type: p.type, pnl: pnl });
+            if(state.history.length > 5) state.history.shift();
+            updateHistoryUI();
+            
+            state.position = null; 
+            beep(440);
         }
-        db.ref('orakel_v7_final').set({ bal: state.balance, pos: state.position, run: state.running, spd: state.speed, lastP: price, time: Date.now() });
+        
+        db.ref('orakel_v7_final').set({ 
+            bal: state.balance, 
+            pos: state.position, 
+            run: state.running, 
+            spd: state.speed, 
+            lastP: price, 
+            hist: state.history,
+            time: Date.now() 
+        });
     }
 
     function brain() {
@@ -267,9 +322,8 @@
         const c = Profiles[state.speed]; if(state.prices.length < c.es) return;
 
         const ef=MathCore.ema(state.prices,c.ef), es=MathCore.ema(state.prices,c.es), r=MathCore.rsi(state.prices,c.r), bb=MathCore.bb(state.prices,c.b);
-        const th = p * 0.0002; // Hysteresis 0.02%
+        const th = p * 0.0002;
 
-        // Настройка индикаторов
         document.getElementById('ind-ema').className = 'chip ' + (ef > es + th ? 'buy' : (ef < es - th ? 'sell' : 'neutral'));
         document.getElementById('ind-rsi').className = 'chip ' + (r > 55 ? 'buy' : (r < 45 ? 'sell' : 'neutral'));
         document.getElementById('ind-bb').className = 'chip ' + (p < bb.l ? 'buy' : (p > bb.u ? 'sell' : 'neutral'));
@@ -288,11 +342,9 @@
     // --- 5. NETWORK & ECO ---
     let ws;
     function initNet() {
-        if (state.isEco && !state.isMaster) return; // В Эко-режиме Наблюдатель не слушает Binance
-
+        if (state.isEco && !state.isMaster) return;
         ws = new WebSocket('wss://stream.binance.com:443/ws/btcusdt@ticker');
         const st = document.getElementById('net-status');
-
         ws.onopen = () => { st.innerText = "ONLINE"; st.style.color = "var(--neon-green)"; log("LINK: BINANCE_ACTIVE", "sys-log"); };
         ws.onmessage = (e) => {
             const d = JSON.parse(e.data), p = parseFloat(d.c);
@@ -303,87 +355,4 @@
         };
         ws.onclose = () => { 
             st.innerText = "LOST"; st.style.color = "var(--neon-red)"; 
-            if (!state.isEco) setTimeout(initNet, 3000); 
-        };
-    }
-
-    function checkEco() {
-        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (conn && (conn.type === 'cellular' || conn.saveData)) {
-            state.isEco = true;
-            document.getElementById('eco-badge').style.display = 'inline';
-            if (!state.isMaster && ws) {
-                ws.close();
-                log("TRAFFIC_SAVER: BINANCE_OFF / CLOUD_ONLY", "sys-log");
-            }
-        }
-    }
-
-    // --- 6. SYNC ---
-    db.ref('orakel_v7_final').on('value', (s) => {
-        const d = s.val(); if (!d) return;
-        state.balance = d.bal; state.position = d.pos; state.running = d.run;
-        
-        // Если мы в ЭКО-режиме, берем цену из Firebase, которую прислал Мастер
-        if (state.isEco && !state.isMaster && d.lastP) {
-            document.getElementById('price').innerText = d.lastP.toFixed(2);
-            updateBalanceUI(d.lastP);
-        }
-
-        if (state.speed != d.spd) {
-            state.speed = d.spd; document.getElementById('spd-sld').value = d.spd;
-            document.getElementById('spd-lbl').innerText = Profiles[d.spd].n;
-            if (state.isMaster) { clearInterval(window.bT); window.bT = setInterval(brain, Profiles[d.spd].i); }
-        }
-
-        const btn = document.getElementById('stop-btn');
-        btn.className = state.running ? 'btn' : 'btn active';
-        btn.innerText = state.running ? 'STOP_AI' : 'START_AI';
-    });
-
-    const pRef = db.ref('presence_v7').push(); pRef.onDisconnect().remove(); pRef.set(true);
-    let initialCheck = true;
-    db.ref('presence_v7').on('value', (s) => {
-        const count = s.numChildren();
-        document.getElementById('online-count').innerText = count;
-        if (initialCheck && count > 1) {
-            document.getElementById('master-toggle').checked = false;
-            state.isMaster = false; log("UNITY: OBSERVER_AUTO_MODE", "sys-log");
-        }
-        initialCheck = false;
-    });
-
-    // --- 7. UI EVENTS ---
-    document.getElementById('stop-btn').onclick = () => {
-        const p = parseFloat(document.getElementById('price').innerText);
-        if (state.running && state.position) trade('CLOSE', p);
-        db.ref('orakel_v7_final').update({ run: !state.running }); beep(660);
-    };
-
-    document.getElementById('master-toggle').onchange = function() {
-        state.isMaster = this.checked;
-        log(state.isMaster ? "CORE: MASTER_ACTIVE" : "CORE: OBSERVER_ONLY", "sys-log");
-        if (state.isMaster) { 
-            if (!ws || ws.readyState !== 1) initNet();
-            window.bT = setInterval(brain, Profiles[state.speed].i); 
-        } else { 
-            clearInterval(window.bT); 
-            if (state.isEco && ws) ws.close();
-        }
-    };
-
-    document.getElementById('spd-sld').oninput = function() {
-        db.ref('orakel_v7_final').update({ spd: parseInt(this.value) });
-    };
-
-    window.onload = () => {
-        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
-        checkEco();
-        initNet();
-        setInterval(() => document.getElementById('sys-clock').innerText = new Date().toLocaleTimeString([],{hour12:false}), 1000);
-        setInterval(() => { if(state.running && Date.now()-state.lastT > 15000) beep(220, 0.5); }, 15000);
-        log("SYSTEM_READY: ORAKUL_V7.3_STABLE", "sys-log");
-    };
-</script>
-</body>
-</html>
+            if (!state.isEco) setTimeout(initNet
